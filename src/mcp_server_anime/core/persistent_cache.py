@@ -45,6 +45,7 @@ class PersistentCache:
 
     def __init__(
         self,
+        provider_source: str = "anidb",
         db_path: str | None = None,
         memory_ttl: float = 3600.0,  # 1 hour for memory cache
         persistent_ttl: float = 172800.0,  # 48 hours for DB cache
@@ -53,11 +54,13 @@ class PersistentCache:
         """Initialize the persistent cache.
 
         Args:
+            provider_source: Source provider name (e.g., "anidb", "anilist")
             db_path: Path to SQLite database file. If None, uses default location.
             memory_ttl: TTL for memory cache in seconds (default: 1 hour)
             persistent_ttl: TTL for database cache in seconds (default: 48 hours)
             max_memory_size: Maximum number of entries in memory cache (default: 1000)
         """
+        self.provider_source = provider_source
         self.memory_ttl = memory_ttl
         self.persistent_ttl = persistent_ttl
         self.max_memory_size = max_memory_size
@@ -171,14 +174,14 @@ class PersistentCache:
                 return None
 
     async def set(
-        self, key: str, value: Any, xml_content: str | None = None
+        self, key: str, value: Any, source_data: str | None = None
     ) -> None:
         """Store a value in both memory and database caches.
 
         Args:
             key: Cache key
             value: Value to cache (AnimeDetails or list of AnimeSearchResult)
-            xml_content: Optional raw XML content for debugging
+            source_data: Optional raw source data (XML for AniDB, JSON for AniList, etc.)
         """
         async with self._lock:
             # Store in memory cache
@@ -197,17 +200,18 @@ class PersistentCache:
 
                     # Calculate data size
                     data_size = CacheSerializer.calculate_data_size(
-                        parsed_data_json, xml_content
+                        parsed_data_json, source_data
                     )
 
                     # Store in database
                     await self._db.set_cache_entry(
                         cache_key=key,
+                        provider_source=self.provider_source,
                         method_name=method_name,
                         parameters_json=parameters_json,
                         parsed_data_json=parsed_data_json,
                         expires_at=expires_at,
-                        xml_content=xml_content,
+                        source_data=source_data,
                         data_size=data_size,
                     )
 
@@ -435,6 +439,7 @@ class PersistentCache:
 
 
 async def create_persistent_cache(
+    provider_source: str = "anidb",
     db_path: str | None = None,
     memory_ttl: float = 3600.0,
     persistent_ttl: float = 172800.0,
@@ -443,6 +448,7 @@ async def create_persistent_cache(
     """Create and return a configured persistent cache instance.
 
     Args:
+        provider_source: Source provider name (e.g., "anidb", "anilist")
         db_path: Path to SQLite database file
         memory_ttl: TTL for memory cache in seconds
         persistent_ttl: TTL for database cache in seconds
@@ -453,12 +459,14 @@ async def create_persistent_cache(
 
     Example:
         >>> cache = await create_persistent_cache(
+        ...     provider_source="anidb",
         ...     memory_ttl=1800,      # 30 minutes
         ...     persistent_ttl=86400, # 24 hours
         ...     max_memory_size=500
         ... )
     """
     cache = PersistentCache(
+        provider_source=provider_source,
         db_path=db_path,
         memory_ttl=memory_ttl,
         persistent_ttl=persistent_ttl,

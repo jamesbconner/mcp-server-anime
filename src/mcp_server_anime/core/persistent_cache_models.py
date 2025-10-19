@@ -27,9 +27,10 @@ class PersistentCacheEntry:
     
     Attributes:
         cache_key: Unique identifier for the cache entry
+        provider_source: Source provider name (e.g., "anidb", "anilist")
         method_name: Name of the method that generated this cache entry
         parameters_json: JSON string of the parameters used for the original request
-        xml_content: Raw XML response from the API (optional, for debugging)
+        source_data: Raw source data (XML for AniDB, JSON for AniList, etc.)
         parsed_data_json: JSON serialized parsed data (AnimeDetails or search results)
         created_at: Timestamp when the entry was created
         expires_at: Timestamp when the entry expires
@@ -39,9 +40,10 @@ class PersistentCacheEntry:
     """
     
     cache_key: str
+    provider_source: str
     method_name: str
     parameters_json: str
-    xml_content: str | None
+    source_data: str | None
     parsed_data_json: str
     created_at: datetime
     expires_at: datetime
@@ -90,9 +92,10 @@ class PersistentCacheEntry:
         """
         (
             cache_key,
+            provider_source,
             method_name,
             parameters_json,
-            xml_content,
+            source_data,
             parsed_data_json,
             created_at_str,
             expires_at_str,
@@ -103,9 +106,10 @@ class PersistentCacheEntry:
 
         return cls(
             cache_key=cache_key,
+            provider_source=provider_source,
             method_name=method_name,
             parameters_json=parameters_json,
-            xml_content=xml_content,
+            source_data=source_data,
             parsed_data_json=parsed_data_json,
             created_at=datetime.fromisoformat(created_at_str),
             expires_at=datetime.fromisoformat(expires_at_str),
@@ -122,9 +126,10 @@ class PersistentCacheEntry:
         """
         return (
             self.cache_key,
+            self.provider_source,
             self.method_name,
             self.parameters_json,
-            self.xml_content,
+            self.source_data,
             self.parsed_data_json,
             self.created_at.isoformat(),
             self.expires_at.isoformat(),
@@ -345,18 +350,18 @@ class CacheSerializer:
 
     @staticmethod
     def calculate_data_size(
-        parsed_data_json: str, xml_content: str | None = None
+        parsed_data_json: str, source_data: str | None = None
     ) -> int:
         """Calculate the total size of cached data in bytes.
         
         Args:
             parsed_data_json: JSON string of parsed data
-            xml_content: Optional XML content string
+            source_data: Optional raw source data (XML, JSON, etc.)
             
         Returns:
             Total size in bytes
         """
         size = len(parsed_data_json.encode('utf-8'))
-        if xml_content:
-            size += len(xml_content.encode('utf-8'))
+        if source_data:
+            size += len(source_data.encode('utf-8'))
         return size

@@ -86,6 +86,7 @@ class AniDBService:
             # Always use persistent cache for now, but make it configurable in the future
             # The persistent cache gracefully falls back to memory-only if DB fails
             self._cache = await create_persistent_cache(
+                provider_source="anidb",
                 db_path=self.config.cache_db_path,
                 memory_ttl=float(self.config.cache_ttl),
                 persistent_ttl=float(self.config.persistent_cache_ttl),
@@ -469,8 +470,8 @@ class AniDBService:
                     episode_count=details.episode_count,
                 )
 
-                # Cache the successful result with XML content
-                await self._cache.set(cache_key, details, xml_content=xml_content)
+                # Cache the successful result with source data (XML for AniDB)
+                await self._cache.set(cache_key, details, source_data=xml_content)
                 log_cache_operation("set", cache_key)
 
                 return details
