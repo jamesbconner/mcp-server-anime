@@ -1,0 +1,3 @@
+@echo off
+echo Analyzing test coverage...
+poetry run python scripts/test_coverage.py --detailed --suggestions

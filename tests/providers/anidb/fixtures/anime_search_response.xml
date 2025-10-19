@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<anime>
+  <anime aid="30" type="TV Series" year="1995">
+    <title>Neon Genesis Evangelion</title>
+  </anime>
+  <anime aid="32" type="Movie" year="1997">
+    <title>Neon Genesis Evangelion: Death &amp; Rebirth</title>
+  </anime>
+  <anime aid="39" type="Movie" year="1997">
+    <title>Neon Genesis Evangelion: The End of Evangelion</title>
+  </anime>
+  <anime aid="2759" type="Movie" year="2007">
+    <title>Evangelion: 1.0 You Are (Not) Alone</title>
+  </anime>
+  <anime aid="3785" type="Movie" year="2009">
+    <title>Evangelion: 2.0 You Can (Not) Advance</title>
+  </anime>
+</anime>

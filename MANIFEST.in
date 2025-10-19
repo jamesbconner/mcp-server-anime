@@ -1,0 +1,64 @@
+# Package manifest for mcp-server-anime
+# This file specifies which files to include in the source distribution
+
+# Include essential documentation
+include README.md
+include LICENSE
+include CHANGELOG.md
+include MANIFEST.in
+
+# Include configuration files
+include pyproject.toml
+include .pre-commit-config.yaml
+
+# Include documentation
+recursive-include docs *.md
+recursive-include docs *.rst
+recursive-include docs *.txt
+
+# Include test fixtures but not test cache
+recursive-include tests *.py
+recursive-include tests *.json
+recursive-include tests *.xml
+recursive-include tests *.yaml
+recursive-include tests *.yml
+recursive-exclude tests __pycache__
+recursive-exclude tests *.pyc
+recursive-exclude tests *.pyo
+recursive-exclude tests .pytest_cache
+
+# Include scripts
+recursive-include scripts *.py
+recursive-include scripts *.bat
+recursive-include scripts *.sh
+
+# Exclude development and build artifacts
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude .DS_Store
+global-exclude .coverage
+global-exclude .pytest_cache
+global-exclude .mypy_cache
+global-exclude .ruff_cache
+global-exclude *.egg-info
+global-exclude build
+global-exclude dist
+global-exclude .git
+global-exclude .github
+global-exclude .venv
+global-exclude venv
+global-exclude env
+
+# Exclude IDE files
+global-exclude .vscode
+global-exclude .idea
+global-exclude *.swp
+global-exclude *.swo
+global-exclude *~
+
+# Exclude temporary files
+global-exclude *.tmp
+global-exclude *.temp
+global-exclude *.log

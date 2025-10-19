@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<anime>
+  <anime aid="30" type="TV Series" year="1995">
+    <title>Neon Genesis Evangelion</title>
+  <!-- Missing closing tag for anime element -->
+</anime>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<anime aid="30" restricted="false">
+  <type>TV Series</type>
+  <episodecount>26</episodecount>
+  <title>Neon Genesis Evangelion</title>
+  <startdate>1995-10-04</startdate>
+  <enddate>1996-03-27</enddate>
+  <description>At the age of 14 Shinji Ikari is summoned by his father to the city of Neo Tokyo-3 after several years of separation. There he unwillingly accepts the task of becoming the pilot of a giant robot by the name of EVA01 and protect the world from the enigmatic invaders known as "angels." Even though he repeatedly questions why he has accepted this mission, his doing so helps him to gradually find the road to his own self-acceptance.</description>
+  <url>http://www.gainax.co.jp/anime/eva/</url>
+  <titles>
+    <title type="main" lang="en">Neon Genesis Evangelion</title>
+    <title type="official" lang="ja">新世紀エヴァンゲリオン</title>
+    <title type="synonym" lang="en">Evangelion</title>
+    <title type="short" lang="en">NGE</title>
+  </titles>
+  <creators>
+    <creator id="5111" type="Direction">
+      <name>Anno Hideaki</name>
+    </creator>
+    <creator id="5112" type="Music">
+      <name>Sagisu Shirou</name>
+    </creator>
+    <creator id="5113" type="Character Design">
+      <name>Sadamoto Yoshiyuki</name>
+    </creator>
+  </creators>
+  <relatedanime>
+    <anime aid="32" type="Sequel">
+      <title>Neon Genesis Evangelion: Death &amp; Rebirth</title>
+    </anime>
+    <anime aid="39" type="Sequel">
+      <title>Neon Genesis Evangelion: The End of Evangelion</title>
+    </anime>
+    <anime aid="2759" type="Alternative version">
+      <title>Evangelion: 1.0 You Are (Not) Alone</title>
+    </anime>
+  </relatedanime>
+</anime>
