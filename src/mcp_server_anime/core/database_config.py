@@ -119,7 +119,7 @@ class DownloadConfig(BaseModel):
     )
 
     timeout_seconds: int = Field(
-        default=60, ge=10, le=300, description="Download timeout in seconds"
+        default=30, ge=10, le=300, description="Download timeout in seconds"
     )
 
     # File validation
@@ -161,7 +161,7 @@ class DownloadConfig(BaseModel):
                 os.getenv("MCP_ANIME_DOWNLOAD_PROTECTION_HOURS", "36")
             ),
             max_retries=int(os.getenv("MCP_ANIME_DOWNLOAD_MAX_RETRIES", "3")),
-            timeout_seconds=int(os.getenv("MCP_ANIME_DOWNLOAD_TIMEOUT_SECONDS", "60")),
+            timeout_seconds=int(os.getenv("MCP_ANIME_DOWNLOAD_TIMEOUT_SECONDS", "30")),
             min_file_size_bytes=int(
                 os.getenv("MCP_ANIME_DOWNLOAD_MIN_FILE_SIZE", "100000")
             ),
