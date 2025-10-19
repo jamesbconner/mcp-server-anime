@@ -93,7 +93,7 @@ class MultiProviderDatabase:
                         provider_source TEXT NOT NULL,
                         method_name TEXT NOT NULL,
                         parameters_json TEXT NOT NULL,
-                        xml_content TEXT,
+                        source_data TEXT,
                         parsed_data_json TEXT NOT NULL,
                         created_at DATETIME NOT NULL,
                         expires_at DATETIME NOT NULL,
@@ -137,7 +137,7 @@ class MultiProviderDatabase:
                 # Store database version
                 conn.execute("""
                     INSERT OR REPLACE INTO database_metadata (key, value)
-                    VALUES ('schema_version', '1.2')
+                    VALUES ('schema_version', '1.3')
                 """)
 
                 conn.commit()
@@ -610,7 +610,7 @@ class MultiProviderDatabase:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.execute(
                     """
-                    SELECT cache_key, provider_source, method_name, parameters_json, xml_content, 
+                    SELECT cache_key, provider_source, method_name, parameters_json, source_data, 
                            parsed_data_json, created_at, expires_at, access_count, 
                            last_accessed, data_size
                     FROM persistent_cache 
@@ -631,7 +631,7 @@ class MultiProviderDatabase:
         parameters_json: str,
         parsed_data_json: str,
         expires_at: datetime,
-        xml_content: str | None = None,
+        source_data: str | None = None,
         data_size: int | None = None,
     ) -> None:
         """Store a cache entry in the database.
@@ -643,7 +643,7 @@ class MultiProviderDatabase:
             parameters_json: JSON string of parameters
             parsed_data_json: JSON string of parsed data
             expires_at: Expiration timestamp
-            xml_content: Optional raw XML content
+            source_data: Optional raw source data (XML for AniDB, JSON for AniList, etc.)
             data_size: Size of cached data in bytes
 
         Raises:
@@ -652,8 +652,8 @@ class MultiProviderDatabase:
         if data_size is None:
             # Calculate data size
             data_size = len(parsed_data_json.encode('utf-8'))
-            if xml_content:
-                data_size += len(xml_content.encode('utf-8'))
+            if source_data:
+                data_size += len(source_data.encode('utf-8'))
 
         now = datetime.now()
 
@@ -662,7 +662,7 @@ class MultiProviderDatabase:
                 conn.execute(
                     """
                     INSERT OR REPLACE INTO persistent_cache 
-                    (cache_key, provider_source, method_name, parameters_json, xml_content, 
+                    (cache_key, provider_source, method_name, parameters_json, source_data, 
                      parsed_data_json, created_at, expires_at, access_count, 
                      last_accessed, data_size)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -672,7 +672,7 @@ class MultiProviderDatabase:
                         provider_source,
                         method_name,
                         parameters_json,
-                        xml_content,
+                        source_data,
                         parsed_data_json,
                         now.isoformat(),
                         expires_at.isoformat(),

@@ -470,8 +470,8 @@ class AniDBService:
                     episode_count=details.episode_count,
                 )
 
-                # Cache the successful result with XML content
-                await self._cache.set(cache_key, details, xml_content=xml_content)
+                # Cache the successful result with source data (XML for AniDB)
+                await self._cache.set(cache_key, details, source_data=xml_content)
                 log_cache_operation("set", cache_key)
 
                 return details

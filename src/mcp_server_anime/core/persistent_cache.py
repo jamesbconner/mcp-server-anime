@@ -174,14 +174,14 @@ class PersistentCache:
                 return None
 
     async def set(
-        self, key: str, value: Any, xml_content: str | None = None
+        self, key: str, value: Any, source_data: str | None = None
     ) -> None:
         """Store a value in both memory and database caches.
 
         Args:
             key: Cache key
             value: Value to cache (AnimeDetails or list of AnimeSearchResult)
-            xml_content: Optional raw XML content for debugging
+            source_data: Optional raw source data (XML for AniDB, JSON for AniList, etc.)
         """
         async with self._lock:
             # Store in memory cache
@@ -200,7 +200,7 @@ class PersistentCache:
 
                     # Calculate data size
                     data_size = CacheSerializer.calculate_data_size(
-                        parsed_data_json, xml_content
+                        parsed_data_json, source_data
                     )
 
                     # Store in database
@@ -211,7 +211,7 @@ class PersistentCache:
                         parameters_json=parameters_json,
                         parsed_data_json=parsed_data_json,
                         expires_at=expires_at,
-                        xml_content=xml_content,
+                        source_data=source_data,
                         data_size=data_size,
                     )
 
