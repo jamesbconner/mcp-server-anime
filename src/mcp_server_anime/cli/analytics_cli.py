@@ -453,8 +453,8 @@ class AnalyticsCLI:
                 
                 if db_stats is not None:
                     providers = {
-                        provider: stats['count'] 
-                        for provider, stats in db_stats.get('providers', {}).items()
+                        prov_name: stats['count'] 
+                        for prov_name, stats in db_stats.get('providers', {}).items()
                     }
                     
                     methods = {
