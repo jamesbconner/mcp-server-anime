@@ -9,6 +9,230 @@ from datetime import datetime
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
 
+class AnimeEpisode(BaseModel):
+    """Model for individual anime episodes.
+
+    Represents episode information including titles, air dates, and descriptions.
+    """
+
+    episode_number: int = Field(..., gt=0, description="Episode number")
+    title: str | None = Field(None, max_length=500, description="Episode title")
+    air_date: datetime | None = Field(None, description="Episode air date")
+    description: str | None = Field(None, max_length=2000, description="Episode description")
+    length: int | None = Field(None, gt=0, description="Episode duration in minutes")
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str | None) -> str | None:
+        """Validate episode title if provided."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+        return v
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str | None) -> str | None:
+        """Validate episode description if provided."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+        return v
+
+
+class ExternalResource(BaseModel):
+    """Model for external resource links.
+
+    Represents links to external platforms and databases.
+    """
+
+    type: str = Field(..., min_length=1, max_length=50, description="Platform identifier")
+    identifier: str | None = Field(None, max_length=100, description="External identifier")
+    url: str | None = Field(None, max_length=500, description="External URL")
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v: str) -> str:
+        """Validate resource type is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Resource type cannot be empty")
+        return v.strip()
+
+    @field_validator("identifier")
+    @classmethod
+    def validate_identifier(cls, v: str | None) -> str | None:
+        """Validate identifier if provided."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+        return v
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, v: str | None) -> str | None:
+        """Validate URL if provided."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+        return v
+
+
+class AnimeResources(BaseModel):
+    """Model for organizing external resources by platform.
+
+    Groups external resources by platform type for easy access.
+    """
+
+    myanimelist: list[ExternalResource] = Field(
+        default_factory=list, description="MyAnimeList resources"
+    )
+    imdb: list[ExternalResource] = Field(
+        default_factory=list, description="IMDB resources"
+    )
+    official_sites: list[ExternalResource] = Field(
+        default_factory=list, description="Official website resources"
+    )
+    other: list[ExternalResource] = Field(
+        default_factory=list, description="Other external resources"
+    )
+
+
+class VoiceActor(BaseModel):
+    """Model for voice actor information.
+
+    Represents voice actors associated with anime characters.
+    """
+
+    name: str = Field(..., min_length=1, max_length=200, description="Voice actor name")
+    id: int | None = Field(None, gt=0, description="Voice actor ID in AniDB")
+    language: str | None = Field(None, max_length=10, description="Voice acting language")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate voice actor name is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Voice actor name cannot be empty")
+        return v.strip()
+
+    @field_validator("language")
+    @classmethod
+    def validate_language(cls, v: str | None) -> str | None:
+        """Validate language if provided."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+        return v
+
+
+class AnimeCharacter(BaseModel):
+    """Model for anime character information.
+
+    Represents characters in anime with their descriptions and voice actors.
+    """
+
+    name: str = Field(..., min_length=1, max_length=200, description="Character name")
+    id: int | None = Field(None, gt=0, description="Character ID in AniDB")
+    description: str | None = Field(None, max_length=2000, description="Character description")
+    voice_actors: list[VoiceActor] = Field(
+        default_factory=list, description="List of voice actors for this character"
+    )
+    character_type: str | None = Field(None, max_length=50, description="Character type (Main, Secondary, etc.)")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate character name is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Character name cannot be empty")
+        return v.strip()
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str | None) -> str | None:
+        """Validate character description if provided."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+        return v
+
+    @field_validator("character_type")
+    @classmethod
+    def validate_character_type(cls, v: str | None) -> str | None:
+        """Validate character type if provided."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+        return v
+
+
+class AnimeTag(BaseModel):
+    """Model for anime tags and genres.
+
+    Represents AniDB's tag system for categorizing anime content.
+    """
+
+    id: int = Field(..., gt=0, description="Tag ID in AniDB")
+    name: str = Field(..., min_length=1, max_length=100, description="Tag name")
+    description: str | None = Field(None, max_length=1000, description="Tag description")
+    weight: int | None = Field(None, ge=0, le=600, description="Tag weight/relevance")
+    spoiler: bool = Field(False, description="Whether tag contains spoilers")
+    verified: bool = Field(False, description="Whether tag is verified")
+    parent_id: int | None = Field(None, gt=0, description="Parent tag ID for hierarchies")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate tag name is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Tag name cannot be empty")
+        return v.strip()
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str | None) -> str | None:
+        """Validate tag description if provided."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+        return v
+
+
+class AnimeRecommendation(BaseModel):
+    """Model for user recommendations.
+
+    Represents community recommendations and reviews for anime.
+    """
+
+    type: str = Field(..., min_length=1, max_length=50, description="Recommendation type")
+    text: str = Field(..., min_length=1, max_length=2000, description="Recommendation text")
+    user_id: int | None = Field(None, gt=0, description="User ID who made the recommendation")
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v: str) -> str:
+        """Validate recommendation type is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Recommendation type cannot be empty")
+        return v.strip()
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, v: str) -> str:
+        """Validate recommendation text is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Recommendation text cannot be empty")
+        return v.strip()
+
+
 class AnimeSearchResult(BaseModel):
     """Model for anime search result entries.
 
@@ -183,6 +407,21 @@ class AnimeDetails(BaseModel):
         default_factory=list, description="List of similar anime"
     )
     picture: str | None = Field(None, description="Picture filename")
+    
+    # New enhanced fields
+    episodes: list[AnimeEpisode] = Field(
+        default_factory=list, description="List of episode information"
+    )
+    resources: AnimeResources | None = Field(None, description="External resource links")
+    characters: list[AnimeCharacter] = Field(
+        default_factory=list, description="List of anime characters"
+    )
+    tags: list[AnimeTag] = Field(
+        default_factory=list, description="List of tags and genres"
+    )
+    recommendations: list[AnimeRecommendation] = Field(
+        default_factory=list, description="List of user recommendations"
+    )
 
     @field_validator("title", "type")
     @classmethod
@@ -214,3 +453,4 @@ class AnimeDetails(BaseModel):
 
 
 # Import APIError from exceptions module for backward compatibility
+from .exceptions import APIError

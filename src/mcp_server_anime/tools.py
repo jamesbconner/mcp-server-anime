@@ -140,7 +140,8 @@ def register_anime_tools(mcp: FastMCP) -> None:
         """Get detailed information about a specific anime from AniDB.
 
         Retrieve comprehensive anime data from AniDB including synopsis, ratings,
-        episode count, air dates, creators, and related anime information.
+        episode count, air dates, creators, related anime information, and enhanced
+        data such as episodes, external resources, characters, tags, and recommendations.
 
         Data Source: AniDB (https://anidb.net)
 
@@ -148,7 +149,14 @@ def register_anime_tools(mcp: FastMCP) -> None:
             aid: AniDB anime ID (must be a positive integer)
 
         Returns:
-            Dictionary containing detailed anime information from AniDB
+            Dictionary containing detailed anime information from AniDB with the following structure:
+            - Basic fields: aid, title, type, episode_count, start_date, end_date, synopsis, etc.
+            - Enhanced fields:
+                - episodes: List of episode information with titles, air dates, and descriptions
+                - resources: External links to MyAnimeList, IMDB, official sites, etc.
+                - characters: Character information with voice actors
+                - tags: Genre and content tags with weights and spoiler flags
+                - recommendations: User recommendations and reviews
 
         Raises:
             ValueError: If anime ID is invalid
@@ -157,6 +165,10 @@ def register_anime_tools(mcp: FastMCP) -> None:
         Example:
             >>> details = await anidb_details(30)
             >>> print(f"{details['title']} - {details['episode_count']} episodes")
+            >>> print(f"Episodes available: {len(details['episodes'])}")
+            >>> print(f"Characters: {len(details['characters'])}")
+            >>> if details['resources']:
+            ...     print(f"MyAnimeList entries: {len(details['resources']['myanimelist'])}")
         """
         set_request_context(operation="anidb_details_tool")
         logger.info(
@@ -273,6 +285,101 @@ def _format_anime_details(details: AnimeDetails) -> dict[str, Any]:
             "total": similar.total,
         })
 
+    # Format episodes list
+    episodes = []
+    for episode in details.episodes:
+        episode_data = {
+            "episode_number": episode.episode_number,
+            "title": episode.title,
+            "air_date": episode.air_date.isoformat() if episode.air_date else None,
+            "description": episode.description,
+            "length": episode.length,
+        }
+        episodes.append(episode_data)
+
+    # Format resources
+    resources = None
+    if details.resources:
+        resources = {
+            "myanimelist": [
+                {
+                    "type": res.type,
+                    "identifier": res.identifier,
+                    "url": res.url,
+                }
+                for res in details.resources.myanimelist
+            ],
+            "imdb": [
+                {
+                    "type": res.type,
+                    "identifier": res.identifier,
+                    "url": res.url,
+                }
+                for res in details.resources.imdb
+            ],
+            "official_sites": [
+                {
+                    "type": res.type,
+                    "identifier": res.identifier,
+                    "url": res.url,
+                }
+                for res in details.resources.official_sites
+            ],
+            "other": [
+                {
+                    "type": res.type,
+                    "identifier": res.identifier,
+                    "url": res.url,
+                }
+                for res in details.resources.other
+            ],
+        }
+
+    # Format characters list
+    characters = []
+    for character in details.characters:
+        voice_actors = [
+            {
+                "name": va.name,
+                "id": va.id,
+                "language": va.language,
+            }
+            for va in character.voice_actors
+        ]
+        
+        character_data = {
+            "name": character.name,
+            "id": character.id,
+            "description": character.description,
+            "voice_actors": voice_actors,
+            "character_type": character.character_type,
+        }
+        characters.append(character_data)
+
+    # Format tags list
+    tags = []
+    for tag in details.tags:
+        tag_data = {
+            "id": tag.id,
+            "name": tag.name,
+            "description": tag.description,
+            "weight": tag.weight,
+            "spoiler": tag.spoiler,
+            "verified": tag.verified,
+            "parent_id": tag.parent_id,
+        }
+        tags.append(tag_data)
+
+    # Format recommendations list
+    recommendations = []
+    for recommendation in details.recommendations:
+        rec_data = {
+            "type": recommendation.type,
+            "text": recommendation.text,
+            "user_id": recommendation.user_id,
+        }
+        recommendations.append(rec_data)
+
     return {
         "aid": details.aid,
         "title": details.title,
@@ -289,6 +396,12 @@ def _format_anime_details(details: AnimeDetails) -> dict[str, Any]:
         "ratings": ratings,
         "similar_anime": similar_anime,
         "picture": details.picture,
+        # Enhanced fields
+        "episodes": episodes,
+        "resources": resources,
+        "characters": characters,
+        "tags": tags,
+        "recommendations": recommendations,
     }
 
 
