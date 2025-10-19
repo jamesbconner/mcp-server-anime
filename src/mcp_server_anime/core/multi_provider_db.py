@@ -90,6 +90,7 @@ class MultiProviderDatabase:
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS persistent_cache (
                         cache_key TEXT PRIMARY KEY,
+                        provider_source TEXT NOT NULL,
                         method_name TEXT NOT NULL,
                         parameters_json TEXT NOT NULL,
                         xml_content TEXT,
@@ -123,10 +124,20 @@ class MultiProviderDatabase:
                     ON persistent_cache(access_count)
                 """)
 
+                conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_provider_source 
+                    ON persistent_cache(provider_source)
+                """)
+
+                conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_provider_method 
+                    ON persistent_cache(provider_source, method_name)
+                """)
+
                 # Store database version
                 conn.execute("""
                     INSERT OR REPLACE INTO database_metadata (key, value)
-                    VALUES ('schema_version', '1.1')
+                    VALUES ('schema_version', '1.2')
                 """)
 
                 conn.commit()
@@ -599,7 +610,7 @@ class MultiProviderDatabase:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.execute(
                     """
-                    SELECT cache_key, method_name, parameters_json, xml_content, 
+                    SELECT cache_key, provider_source, method_name, parameters_json, xml_content, 
                            parsed_data_json, created_at, expires_at, access_count, 
                            last_accessed, data_size
                     FROM persistent_cache 
@@ -615,6 +626,7 @@ class MultiProviderDatabase:
     async def set_cache_entry(
         self,
         cache_key: str,
+        provider_source: str,
         method_name: str,
         parameters_json: str,
         parsed_data_json: str,
@@ -626,6 +638,7 @@ class MultiProviderDatabase:
 
         Args:
             cache_key: Unique cache key
+            provider_source: Source provider name (e.g., "anidb", "anilist")
             method_name: Name of the method that generated this cache
             parameters_json: JSON string of parameters
             parsed_data_json: JSON string of parsed data
@@ -649,13 +662,14 @@ class MultiProviderDatabase:
                 conn.execute(
                     """
                     INSERT OR REPLACE INTO persistent_cache 
-                    (cache_key, method_name, parameters_json, xml_content, 
+                    (cache_key, provider_source, method_name, parameters_json, xml_content, 
                      parsed_data_json, created_at, expires_at, access_count, 
                      last_accessed, data_size)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
                         cache_key,
+                        provider_source,
                         method_name,
                         parameters_json,
                         xml_content,
@@ -808,6 +822,15 @@ class MultiProviderDatabase:
                     GROUP BY method_name
                 """).fetchall()
 
+                # Get provider breakdown
+                provider_stats = conn.execute("""
+                    SELECT provider_source, COUNT(*) as count, 
+                           COALESCE(SUM(data_size), 0) as total_size,
+                           COALESCE(SUM(access_count), 0) as total_accesses
+                    FROM persistent_cache
+                    GROUP BY provider_source
+                """).fetchall()
+
                 # Get database file size
                 db_file_size = 0
                 try:
@@ -829,6 +852,14 @@ class MultiProviderDatabase:
                             "total_accesses": accesses,
                         }
                         for method, count, size, accesses in method_stats
+                    },
+                    "providers": {
+                        provider: {
+                            "count": count,
+                            "total_size": size,
+                            "total_accesses": accesses,
+                        }
+                        for provider, count, size, accesses in provider_stats
                     },
                 }
 

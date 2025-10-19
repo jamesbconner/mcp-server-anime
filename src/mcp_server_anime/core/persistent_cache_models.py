@@ -27,6 +27,7 @@ class PersistentCacheEntry:
     
     Attributes:
         cache_key: Unique identifier for the cache entry
+        provider_source: Source provider name (e.g., "anidb", "anilist")
         method_name: Name of the method that generated this cache entry
         parameters_json: JSON string of the parameters used for the original request
         xml_content: Raw XML response from the API (optional, for debugging)
@@ -39,6 +40,7 @@ class PersistentCacheEntry:
     """
     
     cache_key: str
+    provider_source: str
     method_name: str
     parameters_json: str
     xml_content: str | None
@@ -90,6 +92,7 @@ class PersistentCacheEntry:
         """
         (
             cache_key,
+            provider_source,
             method_name,
             parameters_json,
             xml_content,
@@ -103,6 +106,7 @@ class PersistentCacheEntry:
 
         return cls(
             cache_key=cache_key,
+            provider_source=provider_source,
             method_name=method_name,
             parameters_json=parameters_json,
             xml_content=xml_content,
@@ -122,6 +126,7 @@ class PersistentCacheEntry:
         """
         return (
             self.cache_key,
+            self.provider_source,
             self.method_name,
             self.parameters_json,
             self.xml_content,
