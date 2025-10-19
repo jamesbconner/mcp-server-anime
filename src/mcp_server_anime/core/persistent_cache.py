@@ -39,7 +39,7 @@ class PersistentCache:
         ...     persistent_ttl=172800.0, # 48 hour database cache
         ...     max_memory_size=1000
         ... )
-        >>> await cache.set("key", anime_details, xml_content="<xml>...")
+        >>> await cache.set("key", anime_details, source_data="<xml>...")
         >>> result = await cache.get("key")
     """
 

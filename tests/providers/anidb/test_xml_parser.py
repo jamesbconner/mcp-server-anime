@@ -337,7 +337,7 @@ class TestParseAnimeDetails:
 
         with pytest.raises(XMLParsingError) as exc_info:
             parse_anime_details(xml_content)
-        assert "missing required 'aid' attribute" in str(exc_info.value)
+        assert "missing required 'aid' or 'id' attribute" in str(exc_info.value)
 
     def test_parse_anime_details_invalid_aid(self):
         """Test parsing anime details with invalid aid raises error."""
@@ -1929,3 +1929,632 @@ class TestRemainingLineCoverage:
         assert "Sequel" in relation_types
         assert "Prequel" in relation_types
         assert "Side Story" in relation_types
+
+
+class TestEnhancedParsingFunctions:
+    """Test cases for enhanced XML parsing functions."""
+
+    def test_parse_episodes_valid_data(self):
+        """Test parsing valid episode data."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_episodes
+
+        xml = """
+        <anime>
+            <episodes>
+                <episode id="1">
+                    <title>First Episode</title>
+                    <airdate>2023-01-15</airdate>
+                    <summary>The beginning of the story.</summary>
+                    <length>24</length>
+                </episode>
+                <episode id="2">
+                    <title>Second Episode</title>
+                    <airdate>2023-01-22</airdate>
+                    <length>24</length>
+                </episode>
+            </episodes>
+        </anime>
+        """
+        root = etree.fromstring(xml)
+        episodes = _parse_episodes(root)
+
+        assert len(episodes) == 2
+        
+        # Check first episode
+        ep1 = episodes[0]
+        assert ep1.episode_number == 1
+        assert ep1.title == "First Episode"
+        assert ep1.air_date == datetime(2023, 1, 15)
+        assert ep1.description == "The beginning of the story."
+        assert ep1.length == 24
+
+        # Check second episode
+        ep2 = episodes[1]
+        assert ep2.episode_number == 2
+        assert ep2.title == "Second Episode"
+        assert ep2.air_date == datetime(2023, 1, 22)
+        assert ep2.description is None
+        assert ep2.length == 24
+
+    def test_parse_episodes_no_container(self):
+        """Test parsing episodes when no episodes container exists."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_episodes
+
+        xml = "<anime><title>Test</title></anime>"
+        root = etree.fromstring(xml)
+        episodes = _parse_episodes(root)
+
+        assert episodes == []
+
+    def test_parse_episodes_missing_episode_number(self):
+        """Test parsing episodes with missing episode numbers."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_episodes
+
+        xml = """
+        <anime>
+            <episodes>
+                <episode>
+                    <title>No Number Episode</title>
+                </episode>
+                <episode id="2">
+                    <title>Valid Episode</title>
+                </episode>
+            </episodes>
+        </anime>
+        """
+        root = etree.fromstring(xml)
+        episodes = _parse_episodes(root)
+
+        assert len(episodes) == 1
+        assert episodes[0].episode_number == 2
+        assert episodes[0].title == "Valid Episode"
+
+    def test_parse_episodes_alternative_number_sources(self):
+        """Test parsing episodes with alternative episode number sources."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_episodes
+
+        xml = """
+        <anime>
+            <episodes>
+                <episode number="1">
+                    <title>Number Attribute</title>
+                </episode>
+                <episode>
+                    <epno>2</epno>
+                    <title>Epno Element</title>
+                </episode>
+            </episodes>
+        </anime>
+        """
+        root = etree.fromstring(xml)
+        episodes = _parse_episodes(root)
+
+        assert len(episodes) == 2
+        assert episodes[0].episode_number == 1
+        assert episodes[1].episode_number == 2
+
+    def test_parse_resources_valid_data(self):
+        """Test parsing valid resource data."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_resources
+
+        xml = """
+        <anime>
+            <resources>
+                <resource type="1" externalentity="12345" url="https://myanimelist.net/anime/12345">
+                    MyAnimeList Entry
+                </resource>
+                <resource type="43" externalentity="tt1234567">
+                    IMDB Entry
+                </resource>
+                <resource type="4" url="https://official-site.com">
+                    Official Site
+                </resource>
+            </resources>
+        </anime>
+        """
+        root = etree.fromstring(xml)
+        resources = _parse_resources(root)
+
+        assert resources is not None
+        assert len(resources.myanimelist) == 1
+        assert len(resources.imdb) == 1
+        assert len(resources.official_sites) == 1
+        assert len(resources.other) == 0
+
+        # Check MyAnimeList resource
+        mal_resource = resources.myanimelist[0]
+        assert mal_resource.type == "MyAnimeList"
+        assert mal_resource.identifier == "12345"
+        assert mal_resource.url == "https://myanimelist.net/anime/12345"
+
+        # Check IMDB resource
+        imdb_resource = resources.imdb[0]
+        assert imdb_resource.type == "IMDB"
+        assert imdb_resource.identifier == "tt1234567"
+
+    def test_parse_resources_no_container(self):
+        """Test parsing resources when no resources container exists."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_resources
+
+        xml = "<anime><title>Test</title></anime>"
+        root = etree.fromstring(xml)
+        resources = _parse_resources(root)
+
+        assert resources is None
+
+    def test_parse_resources_unknown_type(self):
+        """Test parsing resources with unknown type."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_resources
+
+        xml = """
+        <anime>
+            <resources>
+                <resource type="999" externalentity="unknown">
+                    Unknown Resource
+                </resource>
+            </resources>
+        </anime>
+        """
+        root = etree.fromstring(xml)
+        resources = _parse_resources(root)
+
+        assert resources is not None
+        assert len(resources.other) == 1
+        assert resources.other[0].type == "Unknown (999)"
+
+    def test_parse_characters_valid_data(self):
+        """Test parsing valid character data."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_characters
+
+        xml = """
+        <anime>
+            <characters>
+                <character id="123">
+                    <name>Protagonist</name>
+                    <description>The main character.</description>
+                    <charactertype>Main</charactertype>
+                    <seiyuu>
+                        <seiyuu id="456" lang="ja">Japanese Voice Actor</seiyuu>
+                        <seiyuu id="789" lang="en">English Voice Actor</seiyuu>
+                    </seiyuu>
+                </character>
+                <character id="124">
+                    <name>Antagonist</name>
+                    <charactertype>Secondary</charactertype>
+                </character>
+            </characters>
+        </anime>
+        """
+        root = etree.fromstring(xml)
+        characters = _parse_characters(root)
+
+        assert len(characters) == 2
+
+        # Check first character
+        char1 = characters[0]
+        assert char1.name == "Protagonist"
+        assert char1.id == 123
+        assert char1.description == "The main character."
+        assert char1.character_type == "Main"
+        assert len(char1.voice_actors) == 2
+
+        # Check voice actors
+        va1 = char1.voice_actors[0]
+        assert va1.name == "Japanese Voice Actor"
+        assert va1.id == 456
+        assert va1.language == "ja"
+
+        # Check second character
+        char2 = characters[1]
+        assert char2.name == "Antagonist"
+        assert char2.description is None
+        assert len(char2.voice_actors) == 0
+
+    def test_parse_characters_no_container(self):
+        """Test parsing characters when no characters container exists."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_characters
+
+        xml = "<anime><title>Test</title></anime>"
+        root = etree.fromstring(xml)
+        characters = _parse_characters(root)
+
+        assert characters == []
+
+    def test_parse_characters_missing_name(self):
+        """Test parsing characters with missing names."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_characters
+
+        xml = """
+        <anime>
+            <characters>
+                <character id="123">
+                    <description>Character without name</description>
+                </character>
+                <character id="124">
+                    <name>Valid Character</name>
+                </character>
+            </characters>
+        </anime>
+        """
+        root = etree.fromstring(xml)
+        characters = _parse_characters(root)
+
+        assert len(characters) == 1
+        assert characters[0].name == "Valid Character"
+
+    def test_parse_tags_valid_data(self):
+        """Test parsing valid tag data."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_tags
+
+        xml = """
+        <anime>
+            <tags>
+                <tag id="123" weight="500" spoiler="false" verified="true" parentid="456">
+                    <name>Action</name>
+                    <description>Action-packed scenes.</description>
+                </tag>
+                <tag id="124" weight="300" spoiler="true">
+                    <name>Drama</name>
+                </tag>
+            </tags>
+        </anime>
+        """
+        root = etree.fromstring(xml)
+        tags = _parse_tags(root)
+
+        assert len(tags) == 2
+
+        # Tags should be sorted by weight (highest first)
+        tag1 = tags[0]
+        assert tag1.id == 123
+        assert tag1.name == "Action"
+        assert tag1.description == "Action-packed scenes."
+        assert tag1.weight == 500
+        assert tag1.spoiler is False
+        assert tag1.verified is True
+        assert tag1.parent_id == 456
+
+        tag2 = tags[1]
+        assert tag2.id == 124
+        assert tag2.name == "Drama"
+        assert tag2.weight == 300
+        assert tag2.spoiler is True
+        assert tag2.verified is False
+
+    def test_parse_tags_no_container(self):
+        """Test parsing tags when no tags container exists."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_tags
+
+        xml = "<anime><title>Test</title></anime>"
+        root = etree.fromstring(xml)
+        tags = _parse_tags(root)
+
+        assert tags == []
+
+    def test_parse_tags_missing_required_fields(self):
+        """Test parsing tags with missing required fields."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_tags
+
+        xml = """
+        <anime>
+            <tags>
+                <tag weight="500">
+                    <name>No ID Tag</name>
+                </tag>
+                <tag id="124">
+                    <!-- No name element -->
+                </tag>
+                <tag id="125">
+                    <name>Valid Tag</name>
+                </tag>
+            </tags>
+        </anime>
+        """
+        root = etree.fromstring(xml)
+        tags = _parse_tags(root)
+
+        assert len(tags) == 1
+        assert tags[0].name == "Valid Tag"
+
+    def test_parse_recommendations_valid_data(self):
+        """Test parsing valid recommendation data."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_recommendations
+
+        xml = """
+        <anime>
+            <recommendations>
+                <recommendation type="Must See" uid="12345">
+                    <text>This is an amazing anime!</text>
+                </recommendation>
+                <recommendation type="Recommended">
+                    <text>Pretty good anime.</text>
+                </recommendation>
+            </recommendations>
+        </anime>
+        """
+        root = etree.fromstring(xml)
+        recommendations = _parse_recommendations(root)
+
+        assert len(recommendations) == 2
+
+        rec1 = recommendations[0]
+        assert rec1.type == "Must See"
+        assert rec1.text == "This is an amazing anime!"
+        assert rec1.user_id == 12345
+
+        rec2 = recommendations[1]
+        assert rec2.type == "Recommended"
+        assert rec2.text == "Pretty good anime."
+        assert rec2.user_id is None
+
+    def test_parse_recommendations_no_container(self):
+        """Test parsing recommendations when no recommendations container exists."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_recommendations
+
+        xml = "<anime><title>Test</title></anime>"
+        root = etree.fromstring(xml)
+        recommendations = _parse_recommendations(root)
+
+        assert recommendations == []
+
+    def test_parse_recommendations_missing_text(self):
+        """Test parsing recommendations with missing text."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_recommendations
+
+        xml = """
+        <anime>
+            <recommendations>
+                <recommendation type="Must See">
+                    <!-- No text element -->
+                </recommendation>
+                <recommendation type="Recommended">
+                    <text>Valid recommendation.</text>
+                </recommendation>
+            </recommendations>
+        </anime>
+        """
+        root = etree.fromstring(xml)
+        recommendations = _parse_recommendations(root)
+
+        assert len(recommendations) == 1
+        assert recommendations[0].text == "Valid recommendation."
+
+    def test_map_resource_type_to_platform(self):
+        """Test resource type mapping function."""
+        from src.mcp_server_anime.providers.anidb.xml_parser import _map_resource_type_to_platform
+
+        # Test known mappings
+        assert _map_resource_type_to_platform(1) == "MyAnimeList"
+        assert _map_resource_type_to_platform(43) == "IMDB"
+        assert _map_resource_type_to_platform(4) == "Official Homepage"
+        assert _map_resource_type_to_platform(6) == "Wikipedia (EN)"
+
+        # Test unknown mapping
+        assert _map_resource_type_to_platform(999) == "Unknown (999)"
+
+    def test_parse_voice_actors_alternative_containers(self):
+        """Test parsing voice actors with alternative container names."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_voice_actors
+
+        xml = """
+        <character>
+            <voiceactors>
+                <voiceactor id="123" lang="ja">Test Voice Actor</voiceactor>
+            </voiceactors>
+        </character>
+        """
+        root = etree.fromstring(xml)
+        voice_actors = _parse_voice_actors(root)
+
+        assert len(voice_actors) == 1
+        assert voice_actors[0].name == "Test Voice Actor"
+        assert voice_actors[0].id == 123
+        assert voice_actors[0].language == "ja"
+
+    def test_enhanced_parsing_error_handling(self):
+        """Test error handling in enhanced parsing functions."""
+        from lxml import etree
+        from src.mcp_server_anime.providers.anidb.xml_parser import (
+            _parse_episodes, _parse_resources, _parse_characters, 
+            _parse_tags, _parse_recommendations
+        )
+
+        # Test with malformed XML that might cause parsing errors
+        xml = """
+        <anime>
+            <episodes>
+                <episode id="invalid_number">
+                    <title>Bad Episode</title>
+                </episode>
+            </episodes>
+            <resources>
+                <resource type="invalid_type">
+                    Bad Resource
+                </resource>
+            </resources>
+            <characters>
+                <character id="invalid_id">
+                    <name>Bad Character</name>
+                </character>
+            </characters>
+            <tags>
+                <tag id="invalid_id">
+                    <name>Bad Tag</name>
+                </tag>
+            </tags>
+        </anime>
+        """
+        root = etree.fromstring(xml)
+
+        # All functions should handle errors gracefully and return empty results
+        episodes = _parse_episodes(root)
+        resources = _parse_resources(root)
+        characters = _parse_characters(root)
+        tags = _parse_tags(root)
+        recommendations = _parse_recommendations(root)
+
+        assert episodes == []
+        assert resources is None or (
+            len(resources.myanimelist) == 0 and 
+            len(resources.imdb) == 0 and 
+            len(resources.official_sites) == 0 and 
+            len(resources.other) == 0
+        )
+        # Characters with valid names should still be parsed even with invalid IDs
+        assert len(characters) == 1
+        assert characters[0].name == "Bad Character"
+        assert characters[0].id is None  # Invalid ID should be None
+        assert tags == []
+        assert recommendations == []
+
+
+class TestEnhancedAnimeDetailsIntegration:
+    """Test integration of enhanced parsing with main parse_anime_details function."""
+
+    def test_parse_anime_details_with_enhanced_fields(self):
+        """Test parsing anime details with all enhanced fields."""
+        xml_content = """<?xml version="1.0" encoding="UTF-8"?>
+        <anime aid="123" restricted="false">
+            <type>TV Series</type>
+            <episodecount>12</episodecount>
+            <title>Enhanced Test Anime</title>
+            <startdate>2023-01-01</startdate>
+            <enddate>2023-03-31</enddate>
+            
+            <episodes>
+                <episode id="1">
+                    <title>First Episode</title>
+                    <airdate>2023-01-15</airdate>
+                    <length>24</length>
+                </episode>
+            </episodes>
+            
+            <resources>
+                <resource type="1" externalentity="12345">
+                    MyAnimeList Entry
+                </resource>
+            </resources>
+            
+            <characters>
+                <character id="123">
+                    <name>Main Character</name>
+                    <description>The protagonist.</description>
+                </character>
+            </characters>
+            
+            <tags>
+                <tag id="456" weight="500">
+                    <name>Action</name>
+                    <description>Action scenes.</description>
+                </tag>
+            </tags>
+            
+            <recommendations>
+                <recommendation type="Must See">
+                    <text>Great anime!</text>
+                </recommendation>
+            </recommendations>
+        </anime>
+        """
+
+        details = parse_anime_details(xml_content)
+
+        # Check basic fields
+        assert details.aid == 123
+        assert details.title == "Enhanced Test Anime"
+        assert details.episode_count == 12
+
+        # Check enhanced fields
+        assert len(details.episodes) == 1
+        assert details.episodes[0].title == "First Episode"
+
+        assert details.resources is not None
+        assert len(details.resources.myanimelist) == 1
+
+        assert len(details.characters) == 1
+        assert details.characters[0].name == "Main Character"
+
+        assert len(details.tags) == 1
+        assert details.tags[0].name == "Action"
+
+        assert len(details.recommendations) == 1
+        assert details.recommendations[0].text == "Great anime!"
+
+    def test_parse_anime_details_enhanced_fields_graceful_failure(self):
+        """Test that enhanced field parsing failures don't break basic parsing."""
+        xml_content = """<?xml version="1.0" encoding="UTF-8"?>
+        <anime aid="123" restricted="false">
+            <type>TV Series</type>
+            <episodecount>12</episodecount>
+            <title>Test Anime</title>
+            
+            <!-- Malformed enhanced sections that should be skipped -->
+            <episodes>
+                <episode>
+                    <!-- Missing required episode number -->
+                    <title>Bad Episode</title>
+                </episode>
+            </episodes>
+            
+            <characters>
+                <character>
+                    <!-- Missing required character name -->
+                    <description>Bad character</description>
+                </character>
+            </characters>
+        </anime>
+        """
+
+        details = parse_anime_details(xml_content)
+
+        # Basic fields should still work
+        assert details.aid == 123
+        assert details.title == "Test Anime"
+        assert details.episode_count == 12
+
+        # Enhanced fields should be empty due to parsing failures
+        assert details.episodes == []
+        assert details.characters == []
+        assert details.tags == []
+        assert details.recommendations == []
+        assert details.resources is None
+
+    def test_parse_anime_details_no_enhanced_sections(self):
+        """Test parsing anime details without any enhanced sections."""
+        xml_content = """<?xml version="1.0" encoding="UTF-8"?>
+        <anime aid="123" restricted="false">
+            <type>TV Series</type>
+            <episodecount>12</episodecount>
+            <title>Basic Test Anime</title>
+        </anime>
+        """
+
+        details = parse_anime_details(xml_content)
+
+        # Basic fields should work
+        assert details.aid == 123
+        assert details.title == "Basic Test Anime"
+
+        # Enhanced fields should have default values
+        assert details.episodes == []
+        assert details.resources is None
+        assert details.characters == []
+        assert details.tags == []
+        assert details.recommendations == []

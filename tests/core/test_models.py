@@ -10,12 +10,19 @@ import pytest
 from pydantic import ValidationError
 
 from src.mcp_server_anime.core.models import (
+    AnimeCharacter,
     AnimeCreator,
     AnimeDetails,
+    AnimeEpisode,
+    AnimeRecommendation,
+    AnimeResources,
     AnimeSearchResult,
+    AnimeTag,
     AnimeTitle,
     APIError,
+    ExternalResource,
     RelatedAnime,
+    VoiceActor,
 )
 
 
@@ -788,3 +795,453 @@ class TestModelSerialization:
         assert details.aid == 123
         assert details.title == "Test"
         assert not hasattr(details, "extra_field")
+
+
+class TestAnimeEpisode:
+    """Test cases for AnimeEpisode model."""
+
+    def test_valid_anime_episode(self):
+        """Test creating a valid AnimeEpisode."""
+        air_date = datetime(2023, 1, 15)
+        episode = AnimeEpisode(
+            episode_number=1,
+            title="First Episode",
+            air_date=air_date,
+            description="The beginning of the story.",
+            length=24,
+        )
+
+        assert episode.episode_number == 1
+        assert episode.title == "First Episode"
+        assert episode.air_date == air_date
+        assert episode.description == "The beginning of the story."
+        assert episode.length == 24
+
+    def test_minimal_episode(self):
+        """Test creating episode with only required fields."""
+        episode = AnimeEpisode(episode_number=5)
+
+        assert episode.episode_number == 5
+        assert episode.title is None
+        assert episode.air_date is None
+        assert episode.description is None
+        assert episode.length is None
+
+    def test_invalid_episode_number(self):
+        """Test that episode number must be positive."""
+        with pytest.raises(ValidationError):
+            AnimeEpisode(episode_number=0)
+
+        with pytest.raises(ValidationError):
+            AnimeEpisode(episode_number=-1)
+
+    def test_invalid_length(self):
+        """Test that length must be positive if provided."""
+        with pytest.raises(ValidationError):
+            AnimeEpisode(episode_number=1, length=0)
+
+        with pytest.raises(ValidationError):
+            AnimeEpisode(episode_number=1, length=-5)
+
+    def test_title_trimming(self):
+        """Test that title is trimmed and empty strings become None."""
+        episode1 = AnimeEpisode(episode_number=1, title="  Episode Title  ")
+        assert episode1.title == "Episode Title"
+
+        episode2 = AnimeEpisode(episode_number=1, title="   ")
+        assert episode2.title is None
+
+        episode3 = AnimeEpisode(episode_number=1, title="")
+        assert episode3.title is None
+
+    def test_description_trimming(self):
+        """Test that description is trimmed and empty strings become None."""
+        episode1 = AnimeEpisode(episode_number=1, description="  A great episode.  ")
+        assert episode1.description == "A great episode."
+
+        episode2 = AnimeEpisode(episode_number=1, description="   ")
+        assert episode2.description is None
+
+
+class TestExternalResource:
+    """Test cases for ExternalResource model."""
+
+    def test_valid_external_resource(self):
+        """Test creating a valid ExternalResource."""
+        resource = ExternalResource(
+            type="MyAnimeList",
+            identifier="12345",
+            url="https://myanimelist.net/anime/12345",
+        )
+
+        assert resource.type == "MyAnimeList"
+        assert resource.identifier == "12345"
+        assert resource.url == "https://myanimelist.net/anime/12345"
+
+    def test_minimal_resource(self):
+        """Test creating resource with only required type."""
+        resource = ExternalResource(type="IMDB")
+
+        assert resource.type == "IMDB"
+        assert resource.identifier is None
+        assert resource.url is None
+
+    def test_empty_type_validation(self):
+        """Test that type cannot be empty."""
+        with pytest.raises(ValidationError):
+            ExternalResource(type="")
+
+        with pytest.raises(ValidationError):
+            ExternalResource(type="   ")
+
+    def test_field_trimming(self):
+        """Test that fields are trimmed and empty strings become None."""
+        resource = ExternalResource(
+            type="  MyAnimeList  ",
+            identifier="  12345  ",
+            url="  https://example.com  ",
+        )
+
+        assert resource.type == "MyAnimeList"
+        assert resource.identifier == "12345"
+        assert resource.url == "https://example.com"
+
+        # Test empty strings become None
+        resource2 = ExternalResource(type="Test", identifier="", url="")
+        assert resource2.identifier is None
+        assert resource2.url is None
+
+
+class TestAnimeResources:
+    """Test cases for AnimeResources model."""
+
+    def test_empty_resources(self):
+        """Test creating empty AnimeResources."""
+        resources = AnimeResources()
+
+        assert resources.myanimelist == []
+        assert resources.imdb == []
+        assert resources.official_sites == []
+        assert resources.other == []
+
+    def test_populated_resources(self):
+        """Test creating AnimeResources with data."""
+        mal_resource = ExternalResource(type="MyAnimeList", identifier="12345")
+        imdb_resource = ExternalResource(type="IMDB", identifier="tt1234567")
+
+        resources = AnimeResources(
+            myanimelist=[mal_resource],
+            imdb=[imdb_resource],
+        )
+
+        assert len(resources.myanimelist) == 1
+        assert len(resources.imdb) == 1
+        assert resources.myanimelist[0].identifier == "12345"
+        assert resources.imdb[0].identifier == "tt1234567"
+
+
+class TestVoiceActor:
+    """Test cases for VoiceActor model."""
+
+    def test_valid_voice_actor(self):
+        """Test creating a valid VoiceActor."""
+        va = VoiceActor(name="Yuki Kaji", id=12345, language="ja")
+
+        assert va.name == "Yuki Kaji"
+        assert va.id == 12345
+        assert va.language == "ja"
+
+    def test_minimal_voice_actor(self):
+        """Test creating voice actor with only required name."""
+        va = VoiceActor(name="Test Actor")
+
+        assert va.name == "Test Actor"
+        assert va.id is None
+        assert va.language is None
+
+    def test_empty_name_validation(self):
+        """Test that name cannot be empty."""
+        with pytest.raises(ValidationError):
+            VoiceActor(name="")
+
+        with pytest.raises(ValidationError):
+            VoiceActor(name="   ")
+
+    def test_invalid_id(self):
+        """Test that ID must be positive if provided."""
+        with pytest.raises(ValidationError):
+            VoiceActor(name="Test", id=0)
+
+        with pytest.raises(ValidationError):
+            VoiceActor(name="Test", id=-1)
+
+    def test_field_trimming(self):
+        """Test that fields are trimmed."""
+        va = VoiceActor(name="  Test Actor  ", language="  ja  ")
+
+        assert va.name == "Test Actor"
+        assert va.language == "ja"
+
+
+class TestAnimeCharacter:
+    """Test cases for AnimeCharacter model."""
+
+    def test_valid_character(self):
+        """Test creating a valid AnimeCharacter."""
+        va = VoiceActor(name="Test Actor", language="ja")
+        character = AnimeCharacter(
+            name="Protagonist",
+            id=12345,
+            description="The main character.",
+            voice_actors=[va],
+            character_type="Main",
+        )
+
+        assert character.name == "Protagonist"
+        assert character.id == 12345
+        assert character.description == "The main character."
+        assert len(character.voice_actors) == 1
+        assert character.character_type == "Main"
+
+    def test_minimal_character(self):
+        """Test creating character with only required name."""
+        character = AnimeCharacter(name="Test Character")
+
+        assert character.name == "Test Character"
+        assert character.id is None
+        assert character.description is None
+        assert character.voice_actors == []
+        assert character.character_type is None
+
+    def test_empty_name_validation(self):
+        """Test that name cannot be empty."""
+        with pytest.raises(ValidationError):
+            AnimeCharacter(name="")
+
+        with pytest.raises(ValidationError):
+            AnimeCharacter(name="   ")
+
+    def test_field_trimming(self):
+        """Test that fields are trimmed and empty strings become None."""
+        character = AnimeCharacter(
+            name="  Test Character  ",
+            description="  A character description.  ",
+            character_type="  Main  ",
+        )
+
+        assert character.name == "Test Character"
+        assert character.description == "A character description."
+        assert character.character_type == "Main"
+
+        # Test empty strings become None
+        character2 = AnimeCharacter(name="Test", description="", character_type="")
+        assert character2.description is None
+        assert character2.character_type is None
+
+
+class TestAnimeTag:
+    """Test cases for AnimeTag model."""
+
+    def test_valid_tag(self):
+        """Test creating a valid AnimeTag."""
+        tag = AnimeTag(
+            id=123,
+            name="Action",
+            description="Action-packed scenes.",
+            weight=500,
+            spoiler=False,
+            verified=True,
+            parent_id=456,
+        )
+
+        assert tag.id == 123
+        assert tag.name == "Action"
+        assert tag.description == "Action-packed scenes."
+        assert tag.weight == 500
+        assert tag.spoiler is False
+        assert tag.verified is True
+        assert tag.parent_id == 456
+
+    def test_minimal_tag(self):
+        """Test creating tag with only required fields."""
+        tag = AnimeTag(id=123, name="Drama")
+
+        assert tag.id == 123
+        assert tag.name == "Drama"
+        assert tag.description is None
+        assert tag.weight is None
+        assert tag.spoiler is False
+        assert tag.verified is False
+        assert tag.parent_id is None
+
+    def test_invalid_id(self):
+        """Test that ID must be positive."""
+        with pytest.raises(ValidationError):
+            AnimeTag(id=0, name="Test")
+
+        with pytest.raises(ValidationError):
+            AnimeTag(id=-1, name="Test")
+
+    def test_empty_name_validation(self):
+        """Test that name cannot be empty."""
+        with pytest.raises(ValidationError):
+            AnimeTag(id=123, name="")
+
+        with pytest.raises(ValidationError):
+            AnimeTag(id=123, name="   ")
+
+    def test_weight_validation(self):
+        """Test weight validation range."""
+        # Valid weights
+        tag1 = AnimeTag(id=123, name="Test", weight=0)
+        assert tag1.weight == 0
+
+        tag2 = AnimeTag(id=123, name="Test", weight=600)
+        assert tag2.weight == 600
+
+        # Invalid weights
+        with pytest.raises(ValidationError):
+            AnimeTag(id=123, name="Test", weight=-1)
+
+        with pytest.raises(ValidationError):
+            AnimeTag(id=123, name="Test", weight=601)
+
+    def test_field_trimming(self):
+        """Test that fields are trimmed."""
+        tag = AnimeTag(
+            id=123,
+            name="  Action  ",
+            description="  Action scenes.  ",
+        )
+
+        assert tag.name == "Action"
+        assert tag.description == "Action scenes."
+
+
+class TestAnimeRecommendation:
+    """Test cases for AnimeRecommendation model."""
+
+    def test_valid_recommendation(self):
+        """Test creating a valid AnimeRecommendation."""
+        rec = AnimeRecommendation(
+            type="Must See",
+            text="This is an amazing anime!",
+            user_id=12345,
+        )
+
+        assert rec.type == "Must See"
+        assert rec.text == "This is an amazing anime!"
+        assert rec.user_id == 12345
+
+    def test_minimal_recommendation(self):
+        """Test creating recommendation with only required fields."""
+        rec = AnimeRecommendation(type="Recommended", text="Good anime.")
+
+        assert rec.type == "Recommended"
+        assert rec.text == "Good anime."
+        assert rec.user_id is None
+
+    def test_empty_type_validation(self):
+        """Test that type cannot be empty."""
+        with pytest.raises(ValidationError):
+            AnimeRecommendation(type="", text="Test")
+
+        with pytest.raises(ValidationError):
+            AnimeRecommendation(type="   ", text="Test")
+
+    def test_empty_text_validation(self):
+        """Test that text cannot be empty."""
+        with pytest.raises(ValidationError):
+            AnimeRecommendation(type="Test", text="")
+
+        with pytest.raises(ValidationError):
+            AnimeRecommendation(type="Test", text="   ")
+
+    def test_field_trimming(self):
+        """Test that fields are trimmed."""
+        rec = AnimeRecommendation(
+            type="  Must See  ",
+            text="  Great anime!  ",
+        )
+
+        assert rec.type == "Must See"
+        assert rec.text == "Great anime!"
+
+    def test_invalid_user_id(self):
+        """Test that user ID must be positive if provided."""
+        with pytest.raises(ValidationError):
+            AnimeRecommendation(type="Test", text="Test", user_id=0)
+
+        with pytest.raises(ValidationError):
+            AnimeRecommendation(type="Test", text="Test", user_id=-1)
+
+
+class TestEnhancedAnimeDetails:
+    """Test cases for enhanced AnimeDetails model with new fields."""
+
+    def test_anime_details_with_enhanced_fields(self):
+        """Test AnimeDetails with all enhanced fields."""
+        episode = AnimeEpisode(episode_number=1, title="First Episode")
+        resource = ExternalResource(type="MyAnimeList", identifier="12345")
+        resources = AnimeResources(myanimelist=[resource])
+        character = AnimeCharacter(name="Protagonist")
+        tag = AnimeTag(id=123, name="Action")
+        recommendation = AnimeRecommendation(type="Must See", text="Great anime!")
+
+        details = AnimeDetails(
+            aid=123,
+            title="Enhanced Anime",
+            type="TV",
+            episode_count=12,
+            episodes=[episode],
+            resources=resources,
+            characters=[character],
+            tags=[tag],
+            recommendations=[recommendation],
+        )
+
+        assert len(details.episodes) == 1
+        assert details.resources is not None
+        assert len(details.characters) == 1
+        assert len(details.tags) == 1
+        assert len(details.recommendations) == 1
+
+    def test_anime_details_enhanced_fields_defaults(self):
+        """Test that enhanced fields have proper defaults."""
+        details = AnimeDetails(aid=123, title="Test", type="TV", episode_count=12)
+
+        assert details.episodes == []
+        assert details.resources is None
+        assert details.characters == []
+        assert details.tags == []
+        assert details.recommendations == []
+
+    def test_enhanced_serialization(self):
+        """Test serialization of enhanced AnimeDetails."""
+        episode = AnimeEpisode(episode_number=1, title="Episode 1")
+        character = AnimeCharacter(name="Hero")
+        tag = AnimeTag(id=123, name="Action")
+
+        details = AnimeDetails(
+            aid=123,
+            title="Test",
+            type="TV",
+            episode_count=12,
+            episodes=[episode],
+            characters=[character],
+            tags=[tag],
+        )
+
+        data = details.model_dump()
+        assert "episodes" in data
+        assert "characters" in data
+        assert "tags" in data
+        assert len(data["episodes"]) == 1
+        assert len(data["characters"]) == 1
+        assert len(data["tags"]) == 1
+
+        # Deserialize
+        restored = AnimeDetails.model_validate(data)
+        assert len(restored.episodes) == 1
+        assert len(restored.characters) == 1
+        assert len(restored.tags) == 1

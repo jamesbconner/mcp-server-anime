@@ -13,13 +13,20 @@ from pydantic import ValidationError
 from ...core.exceptions import XMLParsingError
 from ...core.logging_config import get_logger
 from ...core.models import (
+    AnimeCharacter,
     AnimeCreator,
     AnimeDetails,
+    AnimeEpisode,
     AnimeRatings,
+    AnimeRecommendation,
+    AnimeResources,
     AnimeSearchResult,
+    AnimeTag,
     AnimeTitle,
+    ExternalResource,
     RelatedAnime,
     SimilarAnime,
+    VoiceActor,
 )
 
 logger = get_logger(__name__)
@@ -356,6 +363,48 @@ def parse_anime_details(xml_content: str) -> AnimeDetails:
     if picture == "":
         picture = None
 
+    # Parse enhanced data sections with error handling
+    episodes: list[AnimeEpisode] = []
+    resources: AnimeResources | None = None
+    characters: list[AnimeCharacter] = []
+    tags: list[AnimeTag] = []
+    recommendations: list[AnimeRecommendation] = []
+
+    try:
+        episodes = _parse_episodes(anime_elem)
+        logger.debug(f"Parsed {len(episodes)} episodes for anime {aid}")
+    except Exception as e:
+        logger.warning(f"Failed to parse episodes for anime {aid}: {e}")
+
+    try:
+        resources = _parse_resources(anime_elem)
+        if resources:
+            total_resources = (
+                len(resources.myanimelist) + len(resources.imdb) + 
+                len(resources.official_sites) + len(resources.other)
+            )
+            logger.debug(f"Parsed {total_resources} resources for anime {aid}")
+    except Exception as e:
+        logger.warning(f"Failed to parse resources for anime {aid}: {e}")
+
+    try:
+        characters = _parse_characters(anime_elem)
+        logger.debug(f"Parsed {len(characters)} characters for anime {aid}")
+    except Exception as e:
+        logger.warning(f"Failed to parse characters for anime {aid}: {e}")
+
+    try:
+        tags = _parse_tags(anime_elem)
+        logger.debug(f"Parsed {len(tags)} tags for anime {aid}")
+    except Exception as e:
+        logger.warning(f"Failed to parse tags for anime {aid}: {e}")
+
+    try:
+        recommendations = _parse_recommendations(anime_elem)
+        logger.debug(f"Parsed {len(recommendations)} recommendations for anime {aid}")
+    except Exception as e:
+        logger.warning(f"Failed to parse recommendations for anime {aid}: {e}")
+
     try:
         return AnimeDetails(
             aid=aid,
@@ -373,6 +422,12 @@ def parse_anime_details(xml_content: str) -> AnimeDetails:
             ratings=ratings,
             similar_anime=similar_anime,
             picture=picture,
+            # Enhanced fields
+            episodes=episodes,
+            resources=resources,
+            characters=characters,
+            tags=tags,
+            recommendations=recommendations,
         )
     except ValidationError as e:
         raise XMLParsingError(
@@ -554,7 +609,9 @@ def _parse_related_anime(anime_elem: etree._Element) -> list[RelatedAnime]:
             # Extract related anime ID (try both id and aid attributes)
             aid_str = related_elem.get("id") or related_elem.get("aid")
             if not aid_str:
-                aid_elem = related_elem.find("aid") or related_elem.find("id")
+                aid_elem = related_elem.find("aid")
+                if aid_elem is None:
+                    aid_elem = related_elem.find("id")
                 if aid_elem is not None:
                     aid_str = _safe_get_text(aid_elem)
 
@@ -751,6 +808,519 @@ def _parse_similar_anime(anime_elem: etree._Element) -> list[SimilarAnime]:
             continue
 
     return similar
+
+
+def _parse_episodes(anime_elem: etree._Element) -> list[AnimeEpisode]:
+    """Parse episode elements from anime XML.
+
+    Args:
+        anime_elem: The anime XML element
+
+    Returns:
+        List of AnimeEpisode objects
+    """
+    episodes: list[AnimeEpisode] = []
+
+    # Look for episodes container
+    episodes_container = anime_elem.find("episodes")
+    if episodes_container is None:
+        return episodes
+
+    episode_elements = episodes_container.findall("episode")
+
+    for episode_elem in episode_elements:
+        try:
+            # Extract episode number (required)
+            episode_num_str = episode_elem.get("id")
+            if not episode_num_str:
+                # Try alternative attribute names
+                episode_num_str = episode_elem.get("number")
+            if not episode_num_str:
+                # Try element content
+                num_elem = episode_elem.find("epno")
+                if num_elem is not None:
+                    episode_num_str = _safe_get_text(num_elem)
+
+            if not episode_num_str:
+                continue
+
+            try:
+                episode_number = int(episode_num_str)
+            except (ValueError, TypeError):
+                continue
+
+            if episode_number <= 0:
+                continue
+
+            # Extract episode title
+            title_elem = episode_elem.find("title")
+            if title_elem is None:
+                title_elem = episode_elem.find("name")
+            title = _safe_get_text(title_elem) if title_elem is not None else None
+            if title == "":
+                title = None
+
+            # Extract air date
+            air_date = None
+            air_date_elem = episode_elem.find("airdate")
+            if air_date_elem is not None:
+                air_date = _safe_get_date(air_date_elem)
+
+            # Extract description/summary
+            desc_elem = episode_elem.find("summary")
+            if desc_elem is None:
+                desc_elem = episode_elem.find("description")
+            description = _safe_get_text(desc_elem) if desc_elem is not None else None
+            if description == "":
+                description = None
+
+            # Extract episode length
+            length = None
+            length_elem = episode_elem.find("length")
+            if length_elem is not None:
+                length_str = _safe_get_text(length_elem)
+                if length_str:
+                    try:
+                        length = int(length_str)
+                        if length <= 0:
+                            length = None
+                    except (ValueError, TypeError):
+                        pass
+
+            episode_obj = AnimeEpisode(
+                episode_number=episode_number,
+                title=title,
+                air_date=air_date,
+                description=description,
+                length=length,
+            )
+            episodes.append(episode_obj)
+
+        except ValidationError as e:
+            logger.warning(f"Failed to parse episode element: {e}")
+            continue
+        except Exception as e:
+            logger.warning(f"Unexpected error parsing episode: {e}")
+            continue
+
+    # Sort episodes by episode number
+    episodes.sort(key=lambda ep: ep.episode_number)
+    return episodes
+
+
+def _parse_resources(anime_elem: etree._Element) -> AnimeResources | None:
+    """Parse external resource links from anime XML.
+
+    Args:
+        anime_elem: The anime XML element
+
+    Returns:
+        AnimeResources object or None if no resources found
+    """
+    # Look for resources container
+    resources_container = anime_elem.find("resources")
+    if resources_container is None:
+        return None
+
+    myanimelist_resources: list[ExternalResource] = []
+    imdb_resources: list[ExternalResource] = []
+    official_sites: list[ExternalResource] = []
+    other_resources: list[ExternalResource] = []
+
+    resource_elements = resources_container.findall("resource")
+
+    for resource_elem in resource_elements:
+        try:
+            # Extract resource type
+            resource_type_str = resource_elem.get("type")
+            if not resource_type_str:
+                continue
+
+            try:
+                resource_type_id = int(resource_type_str)
+            except (ValueError, TypeError):
+                continue
+
+            # Extract external identifier
+            identifier = resource_elem.get("externalentity")
+            if not identifier:
+                identifier = _safe_get_text(resource_elem)
+            if identifier == "":
+                identifier = None
+
+            # Extract URL if available
+            url = resource_elem.get("url")
+            if url == "":
+                url = None
+
+            # Map resource type to platform and create resource object
+            platform_name = _map_resource_type_to_platform(resource_type_id)
+            
+            resource_obj = ExternalResource(
+                type=platform_name,
+                identifier=identifier,
+                url=url,
+            )
+
+            # Categorize by platform
+            if resource_type_id == 1:  # MyAnimeList
+                myanimelist_resources.append(resource_obj)
+            elif resource_type_id == 43:  # IMDB
+                imdb_resources.append(resource_obj)
+            elif resource_type_id in [4, 6, 7]:  # Official sites, Wikipedia
+                official_sites.append(resource_obj)
+            else:
+                other_resources.append(resource_obj)
+
+        except ValidationError as e:
+            logger.warning(f"Failed to parse resource element: {e}")
+            continue
+        except Exception as e:
+            logger.warning(f"Unexpected error parsing resource: {e}")
+            continue
+
+    # Only return resources if at least one was found
+    if myanimelist_resources or imdb_resources or official_sites or other_resources:
+        return AnimeResources(
+            myanimelist=myanimelist_resources,
+            imdb=imdb_resources,
+            official_sites=official_sites,
+            other=other_resources,
+        )
+
+    return None
+
+
+def _map_resource_type_to_platform(resource_type_id: int) -> str:
+    """Map AniDB resource type ID to platform name.
+
+    Args:
+        resource_type_id: AniDB resource type identifier
+
+    Returns:
+        Platform name string
+    """
+    resource_type_mapping = {
+        1: "MyAnimeList",
+        2: "AnimeNfo",
+        3: "AnimeNewsNetwork",
+        4: "Official Homepage",
+        6: "Wikipedia (EN)",
+        7: "Wikipedia (JP)",
+        43: "IMDB",
+        44: "The Movie Database",
+    }
+    
+    return resource_type_mapping.get(resource_type_id, f"Unknown ({resource_type_id})")
+
+
+def _parse_characters(anime_elem: etree._Element) -> list[AnimeCharacter]:
+    """Parse character information from anime XML.
+
+    Args:
+        anime_elem: The anime XML element
+
+    Returns:
+        List of AnimeCharacter objects
+    """
+    characters: list[AnimeCharacter] = []
+
+    # Look for characters container
+    characters_container = anime_elem.find("characters")
+    if characters_container is None:
+        return characters
+
+    character_elements = characters_container.findall("character")
+
+    for char_elem in character_elements:
+        try:
+            # Extract character ID
+            char_id_str = char_elem.get("id")
+            char_id = None
+            if char_id_str:
+                try:
+                    char_id = int(char_id_str)
+                except (ValueError, TypeError):
+                    pass
+
+            # Extract character name (required)
+            name_elem = char_elem.find("name")
+            if name_elem is None:
+                name_elem = char_elem.find("charactername")
+            name = _safe_get_text(name_elem) if name_elem is not None else None
+
+            if not name:
+                continue
+
+            # Extract character description
+            desc_elem = char_elem.find("description")
+            if desc_elem is None:
+                desc_elem = char_elem.find("characterdescription")
+            description = _safe_get_text(desc_elem) if desc_elem is not None else None
+            if description == "":
+                description = None
+
+            # Extract character type
+            type_elem = char_elem.find("charactertype")
+            if type_elem is None:
+                type_elem = char_elem.find("type")
+            character_type = _safe_get_text(type_elem) if type_elem is not None else None
+            if character_type == "":
+                character_type = None
+
+            # Parse voice actors
+            voice_actors = _parse_voice_actors(char_elem)
+
+            character_obj = AnimeCharacter(
+                name=name,
+                id=char_id,
+                description=description,
+                voice_actors=voice_actors,
+                character_type=character_type,
+            )
+            characters.append(character_obj)
+
+        except ValidationError as e:
+            logger.warning(f"Failed to parse character element: {e}")
+            continue
+        except Exception as e:
+            logger.warning(f"Unexpected error parsing character: {e}")
+            continue
+
+    return characters
+
+
+def _parse_voice_actors(char_elem: etree._Element) -> list[VoiceActor]:
+    """Parse voice actor information from character XML element.
+
+    Args:
+        char_elem: The character XML element
+
+    Returns:
+        List of VoiceActor objects
+    """
+    voice_actors: list[VoiceActor] = []
+
+    # Look for seiyuu/voice actor container
+    seiyuu_container = char_elem.find("seiyuu")
+    if seiyuu_container is None:
+        seiyuu_container = char_elem.find("voiceactors")
+    if seiyuu_container is None:
+        return voice_actors
+
+    seiyuu_elements = seiyuu_container.findall("seiyuu")
+    if not seiyuu_elements:
+        seiyuu_elements = seiyuu_container.findall("voiceactor")
+
+    for seiyuu_elem in seiyuu_elements:
+        try:
+            # Extract voice actor ID
+            va_id_str = seiyuu_elem.get("id")
+            va_id = None
+            if va_id_str:
+                try:
+                    va_id = int(va_id_str)
+                except (ValueError, TypeError):
+                    pass
+
+            # Extract voice actor name (required)
+            name = _safe_get_text(seiyuu_elem)
+            if not name:
+                name_elem = seiyuu_elem.find("name")
+                name = _safe_get_text(name_elem) if name_elem is not None else None
+
+            if not name:
+                continue
+
+            # Extract language
+            language = seiyuu_elem.get("lang")
+            if not language:
+                language = seiyuu_elem.get("language")
+            if language == "":
+                language = None
+
+            voice_actor_obj = VoiceActor(
+                name=name,
+                id=va_id,
+                language=language,
+            )
+            voice_actors.append(voice_actor_obj)
+
+        except ValidationError as e:
+            logger.warning(f"Failed to parse voice actor element: {e}")
+            continue
+        except Exception as e:
+            logger.warning(f"Unexpected error parsing voice actor: {e}")
+            continue
+
+    return voice_actors
+
+
+def _parse_tags(anime_elem: etree._Element) -> list[AnimeTag]:
+    """Parse tag and genre information from anime XML.
+
+    Args:
+        anime_elem: The anime XML element
+
+    Returns:
+        List of AnimeTag objects
+    """
+    tags: list[AnimeTag] = []
+
+    # Look for tags container
+    tags_container = anime_elem.find("tags")
+    if tags_container is None:
+        return tags
+
+    tag_elements = tags_container.findall("tag")
+
+    for tag_elem in tag_elements:
+        try:
+            # Extract tag ID (required)
+            tag_id_str = tag_elem.get("id")
+            if not tag_id_str:
+                continue
+
+            try:
+                tag_id = int(tag_id_str)
+            except (ValueError, TypeError):
+                continue
+
+            # Extract tag name (required)
+            name_elem = tag_elem.find("name")
+            name = _safe_get_text(name_elem) if name_elem is not None else None
+
+            if not name:
+                continue
+
+            # Extract tag description
+            desc_elem = tag_elem.find("description")
+            description = _safe_get_text(desc_elem) if desc_elem is not None else None
+            if description == "":
+                description = None
+
+            # Extract tag weight
+            weight_str = tag_elem.get("weight")
+            weight = None
+            if weight_str:
+                try:
+                    weight = int(weight_str)
+                    if weight < 0 or weight > 600:
+                        weight = None
+                except (ValueError, TypeError):
+                    pass
+
+            # Extract spoiler flag
+            spoiler_str = tag_elem.get("spoiler")
+            spoiler = spoiler_str is not None and spoiler_str.lower() in ("true", "1", "yes")
+
+            # Extract verified flag
+            verified_str = tag_elem.get("verified")
+            verified = verified_str is not None and verified_str.lower() in ("true", "1", "yes")
+
+            # Extract parent tag ID
+            parent_id_str = tag_elem.get("parentid")
+            parent_id = None
+            if parent_id_str:
+                try:
+                    parent_id = int(parent_id_str)
+                except (ValueError, TypeError):
+                    pass
+
+            tag_obj = AnimeTag(
+                id=tag_id,
+                name=name,
+                description=description,
+                weight=weight,
+                spoiler=spoiler,
+                verified=verified,
+                parent_id=parent_id,
+            )
+            tags.append(tag_obj)
+
+        except ValidationError as e:
+            logger.warning(f"Failed to parse tag element: {e}")
+            continue
+        except Exception as e:
+            logger.warning(f"Unexpected error parsing tag: {e}")
+            continue
+
+    # Sort tags by weight (highest first) if weights are available
+    tags.sort(key=lambda tag: tag.weight or 0, reverse=True)
+    return tags
+
+
+def _parse_recommendations(anime_elem: etree._Element) -> list[AnimeRecommendation]:
+    """Parse user recommendations from anime XML.
+
+    Args:
+        anime_elem: The anime XML element
+
+    Returns:
+        List of AnimeRecommendation objects
+    """
+    recommendations: list[AnimeRecommendation] = []
+
+    # Look for recommendations container
+    recommendations_container = anime_elem.find("recommendations")
+    if recommendations_container is None:
+        return recommendations
+
+    recommendation_elements = recommendations_container.findall("recommendation")
+
+    for rec_elem in recommendation_elements:
+        try:
+            # Extract recommendation type
+            rec_type = rec_elem.get("type")
+            if not rec_type:
+                type_elem = rec_elem.find("type")
+                rec_type = _safe_get_text(type_elem) if type_elem is not None else None
+
+            if not rec_type:
+                rec_type = "Recommended"  # Default type
+
+            # Extract recommendation text (required)
+            text_elem = rec_elem.find("text")
+            if text_elem is None:
+                text_elem = rec_elem.find("comment")
+            text = _safe_get_text(text_elem) if text_elem is not None else None
+
+            if not text:
+                # Try getting text from element content
+                text = _safe_get_text(rec_elem)
+
+            if not text:
+                continue
+
+            # Basic content filtering - remove excessive whitespace and newlines
+            text = " ".join(text.split())
+
+            # Extract user ID
+            user_id_str = rec_elem.get("uid")
+            if not user_id_str:
+                user_id_str = rec_elem.get("userid")
+            user_id = None
+            if user_id_str:
+                try:
+                    user_id = int(user_id_str)
+                except (ValueError, TypeError):
+                    pass
+
+            recommendation_obj = AnimeRecommendation(
+                type=rec_type,
+                text=text,
+                user_id=user_id,
+            )
+            recommendations.append(recommendation_obj)
+
+        except ValidationError as e:
+            logger.warning(f"Failed to parse recommendation element: {e}")
+            continue
+        except Exception as e:
+            logger.warning(f"Unexpected error parsing recommendation: {e}")
+            continue
+
+    return recommendations
 
 
 def validate_xml_response(xml_content: str) -> None:
