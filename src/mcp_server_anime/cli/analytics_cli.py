@@ -433,7 +433,7 @@ class AnalyticsCLI:
                     logger.debug(f"Could not get database cache stats: {e}")
                 
                 # If neither service nor database is available, return error
-                if not service_available and not db_stats:
+                if not service_available and db_stats is None:
                     result = {
                         "success": False,
                         "error": "Neither service cache nor persistent database available",
@@ -447,16 +447,20 @@ class AnalyticsCLI:
                     
                     return result
 
-                # Process database stats
-                providers = {
-                    provider: stats['count'] 
-                    for provider, stats in db_stats.get('providers', {}).items()
-                }
+                # Process database stats (handle None case)
+                providers = {}
+                methods = {}
                 
-                methods = {
-                    method: stats['count'] 
-                    for method, stats in db_stats.get('methods', {}).items()
-                }
+                if db_stats is not None:
+                    providers = {
+                        provider: stats['count'] 
+                        for provider, stats in db_stats.get('providers', {}).items()
+                    }
+                    
+                    methods = {
+                        method: stats['count'] 
+                        for method, stats in db_stats.get('methods', {}).items()
+                    }
                 
                 # Combine service and database stats
                 combined_stats = {}
@@ -480,7 +484,7 @@ class AnalyticsCLI:
                     })
                 
                 # Add database stats if available
-                if db_stats:
+                if db_stats is not None:
                     combined_stats.update({
                         "persistent_entries": db_stats.get('total_entries', 0),
                         "persistent_active_entries": db_stats.get('active_entries', 0),
@@ -539,7 +543,7 @@ class AnalyticsCLI:
                 else:
                     service_status = "❌ Not Available"
                 
-                db_status = "✅ Available" if db_stats else "❌ Not Available"
+                db_status = "✅ Available" if db_stats is not None else "❌ Not Available"
                 print(f"  Service cache: {service_status}")
                 print(f"  Persistent database: {db_status}")
                 print()
@@ -549,7 +553,7 @@ class AnalyticsCLI:
                 print(f"  Memory entries: {combined_stats.get('memory_entries', 0)}")
                 print(f"  Database entries: {combined_stats.get('db_entries', 0)}")
                 
-                if db_stats:
+                if db_stats is not None:
                     print(f"  Active entries: {db_stats.get('active_entries', 0)}")
                     print(f"  Expired entries: {db_stats.get('expired_entries', 0)}")
                 
@@ -563,7 +567,7 @@ class AnalyticsCLI:
                     for method, count in methods.items():
                         print(f"    {method}: {count} entries")
                 
-                if db_stats:
+                if db_stats is not None:
                     data_size_mb = db_stats.get('total_data_size', 0) / (1024 * 1024)
                     print(f"  Total cached data size: {data_size_mb:.2f} MB")
                     
