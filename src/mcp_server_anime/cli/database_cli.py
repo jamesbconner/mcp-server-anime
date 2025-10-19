@@ -13,15 +13,24 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-# Add src directory to path for imports (src layout)
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-
-from src.mcp_server_anime.core.database_config import get_local_db_config, validate_config
-from src.mcp_server_anime.core.multi_provider_db import get_multi_provider_database
-from src.mcp_server_anime.core.schema_manager import create_schema_manager
-from src.mcp_server_anime.core.transaction_logger import get_transaction_logger
-from src.mcp_server_anime.providers.anidb.search_service import get_search_service
-from src.mcp_server_anime.providers.anidb.titles_downloader import TitlesDownloader
+# Handle imports for both direct execution and module execution
+try:
+    # Try relative imports first (when run as module with python -m)
+    from ..core.database_config import get_local_db_config, validate_config
+    from ..core.multi_provider_db import get_multi_provider_database
+    from ..core.schema_manager import create_schema_manager
+    from ..core.transaction_logger import get_transaction_logger
+    from ..providers.anidb.search_service import get_search_service
+    from ..providers.anidb.titles_downloader import TitlesDownloader
+except ImportError:
+    # Fall back to absolute imports (when run directly)
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+    from src.mcp_server_anime.core.database_config import get_local_db_config, validate_config
+    from src.mcp_server_anime.core.multi_provider_db import get_multi_provider_database
+    from src.mcp_server_anime.core.schema_manager import create_schema_manager
+    from src.mcp_server_anime.core.transaction_logger import get_transaction_logger
+    from src.mcp_server_anime.providers.anidb.search_service import get_search_service
+    from src.mcp_server_anime.providers.anidb.titles_downloader import TitlesDownloader
 
 
 class DatabaseCLI:

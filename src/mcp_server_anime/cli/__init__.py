@@ -4,7 +4,15 @@ This package provides CLI tools for database initialization, maintenance,
 monitoring, and troubleshooting of the local anime database.
 """
 
-from .analytics_cli import main as analytics_main
-from .database_cli import main as database_main
+# Lazy imports to avoid module loading issues with python -m
+def get_analytics_main():
+    """Get the analytics CLI main function."""
+    from .analytics_cli import main as analytics_main
+    return analytics_main
 
-__all__ = ["analytics_main", "database_main"]
+def get_database_main():
+    """Get the database CLI main function."""
+    from .database_cli import main as database_main
+    return database_main
+
+__all__ = ["get_analytics_main", "get_database_main"]
