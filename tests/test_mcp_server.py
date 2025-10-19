@@ -119,8 +119,8 @@ class TestMCPServerIntegration:
     @pytest.mark.asyncio
     async def test_run_server_keyboard_interrupt(self) -> None:
         """Test run_server handles keyboard interrupt gracefully."""
-        with patch("mcp_server_anime.server.create_server") as mock_create:
-            with patch("mcp_server_anime.server.stdio_server") as mock_stdio:
+        with patch("src.mcp_server_anime.server.create_server") as mock_create:
+            with patch("src.mcp_server_anime.server.stdio_server") as mock_stdio:
                 mock_server = MagicMock()
                 mock_create.return_value = mock_server
 
@@ -134,7 +134,7 @@ class TestMCPServerIntegration:
     async def test_run_server_service_error(self) -> None:
         """Test run_server handles service errors."""
         with patch(
-            "mcp_server_anime.server.create_server",
+            "src.mcp_server_anime.server.create_server",
             side_effect=Exception("Service error"),
         ):
             with pytest.raises(ServiceError, match="Server failed to run"):
@@ -161,7 +161,7 @@ class TestMCPServerIntegration:
     def test_main_success(self) -> None:
         """Test main function success path."""
         with patch("sys.argv", ["mcp-server-anime", "--log-level", "INFO"]):
-            with patch("mcp_server_anime.server.asyncio.run") as mock_run:
+            with patch("src.mcp_server_anime.server.asyncio.run") as mock_run:
                 with patch("sys.exit") as mock_exit:
                     main()
                     mock_run.assert_called_once()
@@ -175,7 +175,7 @@ class TestMCPServerIntegration:
                 raise KeyboardInterrupt()
 
             with patch(
-                "mcp_server_anime.server.run_server", side_effect=mock_run_server
+                "src.mcp_server_anime.server.run_server", side_effect=mock_run_server
             ):
                 with patch("sys.exit") as mock_exit:
                     main()
@@ -189,7 +189,7 @@ class TestMCPServerIntegration:
                 raise Exception("Test error")
 
             with patch(
-                "mcp_server_anime.server.run_server", side_effect=mock_run_server
+                "src.mcp_server_anime.server.run_server", side_effect=mock_run_server
             ):
                 with patch("sys.exit") as mock_exit:
                     main()

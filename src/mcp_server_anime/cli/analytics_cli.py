@@ -13,13 +13,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add src directory to path for imports (src layout)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from mcp_server_anime.core.analytics_scheduler import get_analytics_scheduler
-from mcp_server_anime.core.database_config import get_local_db_config
-from mcp_server_anime.core.index_optimization import create_index_optimizer
-from mcp_server_anime.core.transaction_logger import get_transaction_logger
+from src.mcp_server_anime.core.analytics_scheduler import get_analytics_scheduler
+from src.mcp_server_anime.core.database_config import get_local_db_config
+from src.mcp_server_anime.core.index_optimization import create_index_optimizer
+from src.mcp_server_anime.core.transaction_logger import get_transaction_logger
 
 
 class AnalyticsCLI:
