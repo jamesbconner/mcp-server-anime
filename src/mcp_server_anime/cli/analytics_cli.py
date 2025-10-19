@@ -32,6 +32,7 @@ except ImportError:
     from src.mcp_server_anime.core.analytics_scheduler import get_analytics_scheduler
     from src.mcp_server_anime.core.database_config import get_local_db_config
     from src.mcp_server_anime.core.index_optimization import create_index_optimizer
+    from src.mcp_server_anime.core.multi_provider_db import get_multi_provider_database
     from src.mcp_server_anime.core.transaction_logger import get_transaction_logger
     from src.mcp_server_anime.providers.anidb.config import load_config
     from src.mcp_server_anime.providers.anidb.service import create_anidb_service
@@ -426,8 +427,7 @@ class AnalyticsCLI:
                 # Get persistent database stats directly
                 db_stats = None
                 try:
-                    from ..core.multi_provider_db import get_multi_provider_database
-                    db = get_multi_provider_database()
+                    db = get_multi_provider_database(self.config.database.database_path)
                     db_stats = await db.get_cache_stats()
                 except Exception as e:
                     logger.debug(f"Could not get database cache stats: {e}")

@@ -17,6 +17,7 @@ from typing import Any
 try:
     # Try relative imports first (when run as module with python -m)
     from ..core.database_config import get_local_db_config, validate_config
+    from ..core.index_optimization import create_index_optimizer
     from ..core.multi_provider_db import get_multi_provider_database
     from ..core.schema_manager import create_schema_manager
     from ..core.transaction_logger import get_transaction_logger
@@ -26,6 +27,7 @@ except ImportError:
     # Fall back to absolute imports (when run directly)
     sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
     from src.mcp_server_anime.core.database_config import get_local_db_config, validate_config
+    from src.mcp_server_anime.core.index_optimization import create_index_optimizer
     from src.mcp_server_anime.core.multi_provider_db import get_multi_provider_database
     from src.mcp_server_anime.core.schema_manager import create_schema_manager
     from src.mcp_server_anime.core.transaction_logger import get_transaction_logger
@@ -213,8 +215,6 @@ class DatabaseCLI:
             print(f"   🗑️  Cleaned {deleted_transactions} old transaction records")
 
             # Optimize database
-            from src.mcp_server_anime.core.index_optimization import create_index_optimizer
-
             optimizer = create_index_optimizer(self.config.database.database_path)
             optimization_results = optimizer.optimize_database(provider)
 
