@@ -180,8 +180,8 @@ class AnimeTag(BaseModel):
     """
 
     id: int = Field(..., gt=0, description="Tag ID in AniDB")
-    name: str = Field(..., min_length=1, max_length=100, description="Tag name")
-    description: str | None = Field(None, max_length=1000, description="Tag description")
+    name: str = Field(..., min_length=1, max_length=1000, description="Tag name")
+    description: str | None = Field(None, max_length=10000, description="Tag description")
     weight: int | None = Field(None, ge=0, le=600, description="Tag weight/relevance")
     spoiler: bool = Field(False, description="Whether tag contains spoilers")
     verified: bool = Field(False, description="Whether tag is verified")
