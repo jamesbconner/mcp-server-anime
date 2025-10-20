@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2025-10-19
+
+### Fixed
+- **Cache Persistence Bug**: Fixed persistent cache being cleared after MCP tool execution
+  - Removed `await self._cache.clear()` from AniDBService cleanup to preserve cached data
+  - Cache entries now persist across MCP tool calls as intended
+  - Improved cache hit rates and reduced API calls
+- **AnimeTag Validation Error**: Increased AnimeTag description max_length from 1000 to 10000 characters
+  - Fixes validation errors for anime with long tag descriptions
+  - Better support for detailed anime metadata
+- **Debug Script Enhancement**: Added command-line argument support to debug_cache_workflow.py
+  - Now accepts XML filename as argument (defaults to 22.xml)
+  - Improved flexibility for testing different anime data
+  - Added file validation and helpful error messages
+
+### Enhanced
+- **Cache Analytics**: Improved access_count field tracking for usage analytics
+  - Better cache performance monitoring and optimization
+  - Enhanced statistics for cache hit/miss patterns
+  - Improved database indexing for access patterns
+- **Cache Statistics CLI**: Added comprehensive cache-stats command to analytics CLI
+  - Real-time cache performance monitoring
+  - Service and database cache status reporting
+  - Storage metrics and provider breakdowns
+  - Hit rate analysis and performance metrics
+
+### Documentation
+- Updated all documentation to reflect recent bug fixes and enhancements
+- Added troubleshooting information for cache persistence issues
+- Enhanced configuration examples for debug workflows
+
 ## [0.2.1] - 2025-10-18
 
 ### Removed

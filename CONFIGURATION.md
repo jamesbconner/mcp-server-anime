@@ -284,6 +284,46 @@ This provides:
 - Database operation logging
 - Transaction logging details
 
+### Debug Tools
+
+Use the enhanced debug script to test cache workflows:
+
+```bash
+# Test with default XML file (22.xml)
+python debug_cache_workflow.py
+
+# Test with specific XML file
+python debug_cache_workflow.py 17550.xml
+
+# Test with custom XML file
+python debug_cache_workflow.py your_anime.xml
+```
+
+The debug script provides comprehensive cache testing including:
+- Cache persistence verification
+- Database storage validation
+- Performance metrics analysis
+- Access count tracking
+
+### Cache Statistics Tool
+
+Monitor cache performance and health with the analytics CLI:
+
+```bash
+# Show comprehensive cache statistics
+python -m mcp_server_anime.cli.analytics_cli cache-stats --provider anidb
+
+# Get JSON output for programmatic use
+python -m mcp_server_anime.cli.analytics_cli cache-stats --provider anidb --json
+```
+
+The cache statistics tool provides:
+- Service and database cache status
+- Storage metrics (entries, sizes, distribution)
+- Performance metrics (hit rates, access times)
+- Provider and method breakdowns
+- Real-time cache health monitoring
+
 ## Security Considerations
 
 ### Data Privacy

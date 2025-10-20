@@ -69,7 +69,7 @@ src/mcp_server_anime/
 
 ### Cache System (`core/cache.py`)
 
-The caching system provides TTL-based caching with automatic cleanup:
+The caching system provides TTL-based caching with automatic cleanup and usage analytics:
 
 ```python
 class TTLCache:
@@ -86,8 +86,10 @@ class TTLCache:
 - TTL-based expiration with automatic cleanup
 - Size-based eviction with LRU behavior
 - Thread-safe operations with async locks
-- Cache statistics and monitoring
+- Cache statistics and monitoring with access_count tracking
 - Configurable per-provider settings
+- Persistent cache with database storage
+- Usage analytics for cache optimization
 
 ### HTTP Client (`core/http_client.py`)
 
@@ -160,6 +162,7 @@ class AnimeDetails(BaseModel):
 - Consistent data models across providers
 - JSON schema generation
 - Field validation and constraints
+- Enhanced validation limits (e.g., AnimeTag descriptions up to 10,000 characters)
 
 ## Provider System
 

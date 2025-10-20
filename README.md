@@ -360,6 +360,10 @@ The extensible provider system supports multiple anime data sources:
 
 For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
+### Recent Fixes and Enhancements
+
+For detailed information about recent bug fixes and enhancements, see [Recent Fixes and Enhancements](docs/recent-fixes-and-enhancements.md).
+
 ### Backward Compatibility
 
 All existing imports and APIs remain unchanged:
@@ -498,6 +502,15 @@ poetry publish -r testpypi
 - Check MCP configuration syntax in `.kiro/settings/mcp.json`
 - Verify server is listed in Kiro's MCP server panel
 
+**Cache persistence issues:**
+
+- Cache entries should persist across MCP tool calls (fixed in v0.2.2)
+- Use `debug_cache_workflow.py` script to test cache behavior
+- Check cache statistics with built-in analytics tools:
+  ```bash
+  python -m mcp_server_anime.cli.analytics_cli cache-stats --provider anidb
+  ```
+
 ### Debug Mode
 
 Run with debug logging for troubleshooting:
@@ -514,11 +527,51 @@ Debug logs will show:
 - Error handling and retry attempts
 - AniDB API interactions and XML parsing
 
+### Analytics and Monitoring
+
+The server includes comprehensive analytics tools for monitoring performance:
+
+```bash
+# Show cache statistics
+python -m mcp_server_anime.cli.analytics_cli cache-stats --provider anidb
+
+# Show search performance metrics
+python -m mcp_server_anime.cli.analytics_cli performance --provider anidb
+
+# Show search statistics
+python -m mcp_server_anime.cli.analytics_cli stats --provider anidb
+
+# Generate comprehensive report
+python -m mcp_server_anime.cli.analytics_cli report --provider anidb
+```
+
+Available analytics commands:
+- `cache-stats` - Cache performance and storage metrics
+- `stats` - Search statistics and popular queries
+- `performance` - Response time metrics and SLA compliance
+- `queries` - Query analytics and patterns
+- `benchmark` - Performance benchmarking
+- `scheduler-status` - Analytics scheduler status
+- `cleanup` - Clean up old transaction data
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Recent Updates
+
+### v0.2.2 - Cache Persistence & Validation Fixes
+
+- **🐛 Cache Persistence Fix**: Fixed persistent cache being cleared after MCP tool execution
+- **📏 Validation Enhancement**: Increased AnimeTag description limit from 1000 to 10000 characters
+- **🔧 Debug Tools**: Enhanced debug script with command-line argument support
+- **📊 Analytics Improvement**: Better access_count tracking for cache usage analytics
+
+### v0.2.1 - Documentation & Security Enhancements
+
+- **📚 Comprehensive Documentation**: Added detailed Kiro setup guide and troubleshooting
+- **🔒 Security Fixes**: Enhanced SQL injection protection and input validation
+- **🛠️ Development Tools**: Improved local development configuration examples
 
 ### v0.2.0 - Provider Architecture & Client Name Correction
 
