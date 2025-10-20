@@ -103,8 +103,8 @@ class AniDBService:
         """Close the service and clean up resources."""
         if self._http_client and not self._http_client.is_closed():
             await self._http_client.close()
-        if self._cache is not None:
-            await self._cache.clear()
+        # Note: We don't clear the cache here as it's meant to persist across service instances
+        # The persistent cache is shared and should only be cleared explicitly via clear_cache()
         self._closed = True
         logger.debug("AniDB service closed")
 
