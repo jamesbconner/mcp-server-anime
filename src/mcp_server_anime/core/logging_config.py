@@ -83,33 +83,35 @@ class StructuredFormatter(logging.Formatter):
 
         # Add extra fields if enabled
         if self.include_extra:
-            extra_fields = {}
-            for key, value in record.__dict__.items():
-                if key not in {
-                    "name",
-                    "msg",
-                    "args",
-                    "levelname",
-                    "levelno",
-                    "pathname",
-                    "filename",
-                    "module",
-                    "lineno",
-                    "funcName",
-                    "created",
-                    "msecs",
-                    "relativeCreated",
-                    "thread",
-                    "threadName",
-                    "processName",
-                    "process",
-                    "getMessage",
-                    "exc_info",
-                    "exc_text",
-                    "stack_info",
-                    "message",
-                }:
-                    extra_fields[key] = value
+            excluded_keys = {
+                "name",
+                "msg",
+                "args",
+                "levelname",
+                "levelno",
+                "pathname",
+                "filename",
+                "module",
+                "lineno",
+                "funcName",
+                "created",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
+                "getMessage",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+                "message",
+            }
+            extra_fields = {
+                key: value
+                for key, value in record.__dict__.items()
+                if key not in excluded_keys
+            }
 
             if extra_fields:
                 log_entry["extra"] = extra_fields
@@ -286,10 +288,7 @@ def setup_logging(
     numeric_level = getattr(logging, log_level.upper(), logging.INFO)
 
     # Choose formatter based on structured flag
-    if structured:
-        formatter = StructuredFormatter()
-    else:
-        formatter = ContextualFormatter()
+    formatter = StructuredFormatter() if structured else ContextualFormatter()
 
     # Configure handlers
     handlers = []

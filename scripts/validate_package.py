@@ -124,7 +124,7 @@ def check_build_artifacts() -> bool:
 
     dist_dir = Path("dist")
     if not dist_dir.exists():
-        print("ℹ No dist directory found (run 'poetry build' first)")
+        print("INFO: No dist directory found (run 'poetry build' first)")
         return True
 
     # Look for wheel and sdist

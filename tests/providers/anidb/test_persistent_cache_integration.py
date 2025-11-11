@@ -171,65 +171,69 @@ class TestAniDBServicePersistentCache:
             test_config.cache_db_path = str(db_path)
 
             # First service instance
-            with patch(
-                "src.mcp_server_anime.providers.anidb.service.parse_anime_details"
-            ) as mock_parse1:
-                with patch(
+            with (
+                patch(
+                    "src.mcp_server_anime.providers.anidb.service.parse_anime_details"
+                ) as mock_parse1,
+                patch(
                     "src.mcp_server_anime.core.http_client.HTTPClient.get"
-                ) as mock_http1:
-                    mock_response1 = MagicMock()
-                    mock_response1.status_code = 200
-                    mock_response1.text = "<anime><title>Kaiju No. 8</title></anime>"
-                    mock_response1.headers = {"content-type": "application/xml"}
-                    mock_http1.return_value = mock_response1
-                    mock_parse1.return_value = sample_anime_details
+                ) as mock_http1,
+            ):
+                mock_response1 = MagicMock()
+                mock_response1.status_code = 200
+                mock_response1.text = "<anime><title>Kaiju No. 8</title></anime>"
+                mock_response1.headers = {"content-type": "application/xml"}
+                mock_http1.return_value = mock_response1
+                mock_parse1.return_value = sample_anime_details
 
-                    service1 = AniDBService(test_config)
+                service1 = AniDBService(test_config)
 
-                    try:
-                        # Cache anime details
-                        result1 = await service1.get_anime_details(17550)
-                        assert result1 is not None
-                        assert mock_http1.call_count == 1
+                try:
+                    # Cache anime details
+                    result1 = await service1.get_anime_details(17550)
+                    assert result1 is not None
+                    assert mock_http1.call_count == 1
 
-                        # Verify cache entry exists
-                        stats1 = await service1.get_cache_stats()
-                        assert stats1["db_entries"] > 0 or stats1["memory_entries"] > 0
+                    # Verify cache entry exists
+                    stats1 = await service1.get_cache_stats()
+                    assert stats1["db_entries"] > 0 or stats1["memory_entries"] > 0
 
-                    finally:
-                        await service1.close()
+                finally:
+                    await service1.close()
 
             # Second service instance (simulating restart)
-            with patch(
-                "src.mcp_server_anime.providers.anidb.service.parse_anime_details"
-            ) as mock_parse2:
-                with patch(
+            with (
+                patch(
+                    "src.mcp_server_anime.providers.anidb.service.parse_anime_details"
+                ) as mock_parse2,
+                patch(
                     "src.mcp_server_anime.core.http_client.HTTPClient.get"
-                ) as mock_http2:
-                    mock_response2 = MagicMock()
-                    mock_response2.status_code = 200
-                    mock_response2.text = "<anime><title>Kaiju No. 8</title></anime>"
-                    mock_response2.headers = {"content-type": "application/xml"}
-                    mock_http2.return_value = mock_response2
-                    mock_parse2.return_value = sample_anime_details
+                ) as mock_http2,
+            ):
+                mock_response2 = MagicMock()
+                mock_response2.status_code = 200
+                mock_response2.text = "<anime><title>Kaiju No. 8</title></anime>"
+                mock_response2.headers = {"content-type": "application/xml"}
+                mock_http2.return_value = mock_response2
+                mock_parse2.return_value = sample_anime_details
 
-                    service2 = AniDBService(test_config)
+                service2 = AniDBService(test_config)
 
-                    try:
-                        # Should load from persistent cache, but if DB is unavailable,
-                        # it will fall back to API call
-                        result2 = await service2.get_anime_details(17550)
-                        assert result2 is not None
-                        assert result2.aid == 17550
-                        assert result2.title == "Kaiju No. 8"
+                try:
+                    # Should load from persistent cache, but if DB is unavailable,
+                    # it will fall back to API call
+                    result2 = await service2.get_anime_details(17550)
+                    assert result2 is not None
+                    assert result2.aid == 17550
+                    assert result2.title == "Kaiju No. 8"
 
-                        # Check cache stats
-                        stats2 = await service2.get_cache_stats()
-                        # Either cache hit or API call should have worked
-                        assert stats2 is not None
+                    # Check cache stats
+                    stats2 = await service2.get_cache_stats()
+                    # Either cache hit or API call should have worked
+                    assert stats2 is not None
 
-                    finally:
-                        await service2.close()
+                finally:
+                    await service2.close()
 
     @patch("src.mcp_server_anime.providers.anidb.service.get_search_service")
     async def test_search_results_caching(
@@ -307,7 +311,7 @@ class TestAniDBServicePersistentCache:
         self, test_config: AniDBConfig
     ) -> None:
         """Test service behavior when cache operations fail."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory():
             # Use invalid path to cause database errors
             test_config.cache_db_path = "/invalid/path/cache.db"
 

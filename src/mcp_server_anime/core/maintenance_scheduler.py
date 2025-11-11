@@ -6,6 +6,7 @@ database performance and reliability.
 """
 
 import asyncio
+import contextlib
 import os
 import sqlite3
 from datetime import datetime, timedelta
@@ -420,10 +421,8 @@ class MaintenanceScheduler:
 
         if self._scheduler_task:
             self._scheduler_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._scheduler_task
-            except asyncio.CancelledError:
-                pass
 
         logger.info("Maintenance scheduler stopped")
 

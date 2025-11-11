@@ -66,7 +66,7 @@ class TestRateLimiter:
             return request_id, time.time() - start_time
 
         # Start multiple concurrent requests
-        start_time = time.time()
+        time.time()
         tasks = [make_request(i) for i in range(3)]
         results = await asyncio.gather(*tasks)
 

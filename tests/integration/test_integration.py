@@ -155,7 +155,7 @@ class TestAniDBAPIIntegration:
         # Mock the HTTP client to use our API mocker
         with patch("src.mcp_server_anime.core.http_client.HTTPClient.get") as mock_get:
 
-            async def mock_get_response(url: str, params: dict = None, **kwargs):
+            async def mock_get_response(url: str, params: dict | None = None, **kwargs):
                 mock_response = await mock_http_get(url, params, **kwargs)
 
                 # Create a mock response object that matches the expected interface
@@ -390,7 +390,7 @@ class TestAniDBAPIErrorHandling:
         ) as mock_create_client:
             mock_client = AsyncMock()
 
-            async def mock_get(url: str, params: dict = None, **kwargs):
+            async def mock_get(url: str, params: dict | None = None, **kwargs):
                 from tests.fixtures.api_mocks import mock_http_get
 
                 mock_response = await mock_http_get(url, params, **kwargs)

@@ -9,24 +9,28 @@ import time
 from typing import Any
 from urllib.parse import urljoin
 
-from ...core.cache import generate_cache_key
-from ...core.error_handler import with_error_handling, with_retry
-from ...core.exceptions import (
+from mcp_server_anime.core.cache import generate_cache_key
+from mcp_server_anime.core.error_handler import with_error_handling, with_retry
+from mcp_server_anime.core.exceptions import (
     APIError,
     DataValidationError,
     ServiceError,
     XMLParsingError,
 )
-from ...core.http_client import HTTPClient, create_http_client
-from ...core.logging_config import (
+from mcp_server_anime.core.http_client import HTTPClient, create_http_client
+from mcp_server_anime.core.logging_config import (
     get_logger,
     log_cache_operation,
     log_performance,
     set_request_context,
 )
-from ...core.models import AnimeDetails, AnimeSearchResult
-from ...core.persistent_cache import PersistentCache, create_persistent_cache
-from ...core.security import ensure_not_none
+from mcp_server_anime.core.models import AnimeDetails, AnimeSearchResult
+from mcp_server_anime.core.persistent_cache import (
+    PersistentCache,
+    create_persistent_cache,
+)
+from mcp_server_anime.core.security import ensure_not_none
+
 from .config import AniDBConfig, load_config
 from .search_service import get_search_service
 from .xml_parser import parse_anime_details

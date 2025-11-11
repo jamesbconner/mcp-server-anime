@@ -7,8 +7,9 @@ multiple anime data providers within the MCP server framework.
 import asyncio
 from typing import Any
 
-from ..core.exceptions import ProviderError
-from ..core.logging_config import get_logger
+from mcp_server_anime.core.exceptions import ProviderError
+from mcp_server_anime.core.logging_config import get_logger
+
 from .base import AnimeDataProvider, ProviderInfo
 
 logger = get_logger(__name__)

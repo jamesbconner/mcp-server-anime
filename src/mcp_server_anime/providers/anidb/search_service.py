@@ -7,12 +7,13 @@ of AniDB titles, with automatic updates and fallback mechanisms.
 import asyncio
 from datetime import datetime
 
-from ...core.exceptions import DatabaseError, ServiceError
-from ...core.logging_config import get_logger
-from ...core.models import AnimeSearchResult
-from ...core.multi_provider_db import get_multi_provider_database
-from ...core.security import SecurityLogger
-from ...core.transaction_logger import log_search_transaction
+from mcp_server_anime.core.exceptions import DatabaseError, ServiceError
+from mcp_server_anime.core.logging_config import get_logger
+from mcp_server_anime.core.models import AnimeSearchResult
+from mcp_server_anime.core.multi_provider_db import get_multi_provider_database
+from mcp_server_anime.core.security import SecurityLogger
+from mcp_server_anime.core.transaction_logger import log_search_transaction
+
 from .titles_downloader import TitlesDownloader
 
 logger = get_logger(__name__)
@@ -151,7 +152,7 @@ class AniDBSearchService:
             # Convert to AnimeSearchResult objects
             seen_aids = set()
 
-            for aid, title, language, title_type in results:
+            for aid, title, _language, _title_type in results:
                 # Avoid duplicates (same anime with different titles)
                 if aid in seen_aids:
                     continue

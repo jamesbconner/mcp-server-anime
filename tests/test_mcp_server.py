@@ -97,24 +97,28 @@ class TestMCPServerIntegration:
 
     def test_server_creation_with_config_error(self) -> None:
         """Test server creation when configuration fails."""
-        with patch(
-            "src.mcp_server_anime.server.load_config",
-            side_effect=Exception("Config error"),
-        ):
-            with pytest.raises(
+        with (
+            patch(
+                "src.mcp_server_anime.server.load_config",
+                side_effect=Exception("Config error"),
+            ),
+            pytest.raises(
                 ConfigurationError,
                 match="Server creation failed due to configuration error",
-            ):
-                create_server()
+            ),
+        ):
+            create_server()
 
     def test_server_creation_with_service_error(self) -> None:
         """Test server creation when service fails."""
-        with patch(
-            "src.mcp_server_anime.server.register_anime_tools",
-            side_effect=Exception("Service error"),
+        with (
+            patch(
+                "src.mcp_server_anime.server.register_anime_tools",
+                side_effect=Exception("Service error"),
+            ),
+            pytest.raises(ServiceError, match="Server creation failed"),
         ):
-            with pytest.raises(ServiceError, match="Server creation failed"):
-                create_server()
+            create_server()
 
     @pytest.mark.asyncio
     async def test_run_server_keyboard_interrupt(self) -> None:
@@ -132,12 +136,14 @@ class TestMCPServerIntegration:
     @pytest.mark.asyncio
     async def test_run_server_service_error(self) -> None:
         """Test run_server handles service errors."""
-        with patch(
-            "src.mcp_server_anime.server.create_server",
-            side_effect=Exception("Service error"),
+        with (
+            patch(
+                "src.mcp_server_anime.server.create_server",
+                side_effect=Exception("Service error"),
+            ),
+            pytest.raises(ServiceError, match="Server failed to run"),
         ):
-            with pytest.raises(ServiceError, match="Server failed to run"):
-                await run_server()
+            await run_server()
 
     def test_parse_args_default(self) -> None:
         """Test parse_args with default arguments."""
@@ -173,12 +179,15 @@ class TestMCPServerIntegration:
             async def mock_run_server():
                 raise KeyboardInterrupt()
 
-            with patch(
-                "src.mcp_server_anime.server.run_server", side_effect=mock_run_server
+            with (
+                patch(
+                    "src.mcp_server_anime.server.run_server",
+                    side_effect=mock_run_server,
+                ),
+                patch("sys.exit") as mock_exit,
             ):
-                with patch("sys.exit") as mock_exit:
-                    main()
-                    mock_exit.assert_called_once_with(0)
+                main()
+                mock_exit.assert_called_once_with(0)
 
     def test_main_exception(self) -> None:
         """Test main function handles exceptions."""
@@ -187,12 +196,15 @@ class TestMCPServerIntegration:
             async def mock_run_server():
                 raise Exception("Test error")
 
-            with patch(
-                "src.mcp_server_anime.server.run_server", side_effect=mock_run_server
+            with (
+                patch(
+                    "src.mcp_server_anime.server.run_server",
+                    side_effect=mock_run_server,
+                ),
+                patch("sys.exit") as mock_exit,
             ):
-                with patch("sys.exit") as mock_exit:
-                    main()
-                    mock_exit.assert_called_once_with(1)
+                main()
+                mock_exit.assert_called_once_with(1)
 
 
 class TestMCPServerConfiguration:

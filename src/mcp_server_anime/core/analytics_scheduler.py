@@ -5,6 +5,7 @@ and performance monitoring to maintain optimal database performance.
 """
 
 import asyncio
+import contextlib
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -52,10 +53,8 @@ class AnalyticsScheduler:
         self._running = False
         if self._cleanup_task:
             self._cleanup_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._cleanup_task
-            except asyncio.CancelledError:
-                pass
 
         logger.info("Analytics scheduler stopped")
 

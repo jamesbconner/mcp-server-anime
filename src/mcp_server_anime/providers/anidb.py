@@ -6,9 +6,10 @@ and integrates it with the extensibility framework.
 
 from typing import Any
 
-from ..core.exceptions import ProviderError
-from ..core.logging_config import get_logger
-from ..core.models import AnimeDetails, AnimeSearchResult
+from mcp_server_anime.core.exceptions import ProviderError
+from mcp_server_anime.core.logging_config import get_logger
+from mcp_server_anime.core.models import AnimeDetails, AnimeSearchResult
+
 from .anidb.config import AniDBConfig, load_config
 from .anidb.service import AniDBService, create_anidb_service
 from .base import AnimeDataProvider, ProviderCapabilities, ProviderInfo

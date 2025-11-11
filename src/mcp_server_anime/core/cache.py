@@ -10,7 +10,7 @@ import hashlib
 import json
 import logging
 import time
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-class CacheEntry(BaseModel, Generic[T]):
+class CacheEntry[T](BaseModel):
     """Represents a single cache entry with TTL support.
 
     Attributes:

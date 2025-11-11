@@ -8,7 +8,7 @@ utilities to prevent SQL injection and other security vulnerabilities.
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class TableNameValidator:
     """Validates table names against security policies."""
 
     # Allowed table name patterns by provider
-    ALLOWED_TABLE_PATTERNS = {
+    ALLOWED_TABLE_PATTERNS: ClassVar[dict] = {
         "anidb": ["{provider}_titles", "{provider}_metadata", "{provider}_cache"],
         "general": ["system_metadata", "provider_status"],
     }

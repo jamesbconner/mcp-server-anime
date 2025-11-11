@@ -351,7 +351,7 @@ class TestAniDBService:
         self, service: AniDBService, mock_http_client: AsyncMock
     ) -> None:
         """Test search anime with XML parsing error."""
-        mock_response = Mock()
+        Mock()
         # Mock the search service to raise an XML parsing error
         mock_search_service = AsyncMock()
         mock_search_service.search_anime.side_effect = XMLParsingError("Parse failed")
@@ -935,7 +935,7 @@ class TestAniDBServiceCaching:
     ) -> None:
         """Test that closing service clears the cache."""
         # Mock HTTP response
-        mock_response = Mock()
+        Mock()
         # Mock the search service
         mock_search_service = AsyncMock()
         mock_search_service.search_anime.return_value = sample_search_results

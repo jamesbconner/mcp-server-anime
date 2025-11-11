@@ -157,7 +157,7 @@ class IndexOptimizer:
                     exact_query, exact_params = SecureQueryHelper.build_count_query(
                         titles_table, "title_normalized = ?"
                     )
-                    cursor = conn.execute(exact_query, [query_lower] + exact_params)
+                    cursor = conn.execute(exact_query, [query_lower, *exact_params])
                     exact_count = cursor.fetchone()[0]
                     exact_time = (datetime.now() - start_time).total_seconds() * 1000
 
@@ -167,7 +167,7 @@ class IndexOptimizer:
                         titles_table, "title_normalized LIKE ?"
                     )
                     cursor = conn.execute(
-                        prefix_query, [f"{query_lower}%"] + prefix_params
+                        prefix_query, [f"{query_lower}%", *prefix_params]
                     )
                     prefix_count = cursor.fetchone()[0]
                     prefix_time = (datetime.now() - start_time).total_seconds() * 1000
@@ -180,7 +180,7 @@ class IndexOptimizer:
                         )
                     )
                     cursor = conn.execute(
-                        substring_query, [f"%{query_lower}%"] + substring_params
+                        substring_query, [f"%{query_lower}%", *substring_params]
                     )
                     substring_count = cursor.fetchone()[0]
                     substring_time = (

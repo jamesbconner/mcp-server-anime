@@ -6,6 +6,7 @@ to ensure database integrity across different versions of the application.
 
 import sqlite3
 from datetime import datetime
+from typing import ClassVar
 
 from .exceptions import ConfigurationError, DatabaseError
 from .logging_config import get_logger
@@ -47,7 +48,7 @@ class SchemaManager:
     """Manages database schema versions and migrations."""
 
     # Define all schema versions in order
-    SCHEMA_VERSIONS = [
+    SCHEMA_VERSIONS: ClassVar[list] = [
         SchemaVersion(
             version="1.0",
             description="Initial multi-provider database schema",

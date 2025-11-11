@@ -5,6 +5,7 @@ with provider-specific tables, metadata management, and cross-provider functiona
 """
 
 import asyncio
+import contextlib
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -359,7 +360,7 @@ class MultiProviderDatabase:
                     limit=limit,
                 )
                 exact_results = conn.execute(
-                    exact_query, [query_lower] + exact_params
+                    exact_query, [query_lower, *exact_params]
                 ).fetchall()
 
                 if len(exact_results) >= limit:
@@ -375,7 +376,7 @@ class MultiProviderDatabase:
                     limit=remaining_limit,
                 )
                 prefix_results = conn.execute(
-                    prefix_query, [f"{query_lower}%", query_lower] + prefix_params
+                    prefix_query, [f"{query_lower}%", query_lower, *prefix_params]
                 ).fetchall()
 
                 # Combine results
@@ -396,8 +397,12 @@ class MultiProviderDatabase:
                 )
                 substring_results = conn.execute(
                     substring_query,
-                    [f"%{query_lower}%", f"{query_lower}%", query_lower]
-                    + substring_params,
+                    [
+                        f"%{query_lower}%",
+                        f"{query_lower}%",
+                        query_lower,
+                        *substring_params,
+                    ],
                 ).fetchall()
 
                 return (all_results + substring_results)[:limit]
@@ -888,10 +893,8 @@ class MultiProviderDatabase:
         """Close database connections and cleanup resources."""
         async with self._lock:
             for conn in self._connection_pool.values():
-                try:
+                with contextlib.suppress(sqlite3.Error):
                     conn.close()
-                except sqlite3.Error:
-                    pass  # Ignore errors during cleanup
 
             self._connection_pool.clear()
             logger.debug("Database connections closed")

@@ -6,7 +6,7 @@ by managing circuit breaker states and global state cleanup.
 
 from __future__ import annotations
 
-from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -19,6 +19,9 @@ from tests.test_isolation import (
     reset_test_state,
     test_isolation_manager,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 @pytest.fixture(autouse=True)
@@ -46,9 +49,9 @@ def isolate_error_handler() -> Generator[None, None, None]:
     information don't leak between tests.
     """
     # Store original state
-    original_circuit_breaker_states = error_handler.circuit_breaker_states.copy()
-    original_error_counts = error_handler.error_counts.copy()
-    original_last_error_times = error_handler.last_error_times.copy()
+    error_handler.circuit_breaker_states.copy()
+    error_handler.error_counts.copy()
+    error_handler.last_error_times.copy()
 
     # Reset to clean state
     error_handler.reset()

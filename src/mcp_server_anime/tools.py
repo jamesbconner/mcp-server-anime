@@ -125,9 +125,7 @@ def register_anime_tools(mcp: FastMCP) -> None:
 
         except Exception as e:
             # Handle and convert errors for MCP
-            mcp_error = handle_mcp_tool_error(
-                e, "anidb_search", {"query": query, "limit": limit}
-            )
+            handle_mcp_tool_error(e, "anidb_search", {"query": query, "limit": limit})
 
             # Convert to appropriate MCP exceptions
             if isinstance(e, DataValidationError):
@@ -218,7 +216,7 @@ def register_anime_tools(mcp: FastMCP) -> None:
 
         except Exception as e:
             # Handle and convert errors for MCP
-            mcp_error = handle_mcp_tool_error(e, "anidb_details", {"aid": aid})
+            handle_mcp_tool_error(e, "anidb_details", {"aid": aid})
 
             # Convert to appropriate MCP exceptions
             if isinstance(e, DataValidationError):

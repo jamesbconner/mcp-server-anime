@@ -16,13 +16,16 @@ from typing import Any
 # Handle imports for both direct execution and module execution
 try:
     # Try relative imports first (when run as module with python -m)
-    from ..core.database_config import get_local_db_config, validate_config
-    from ..core.index_optimization import create_index_optimizer
-    from ..core.multi_provider_db import get_multi_provider_database
-    from ..core.schema_manager import create_schema_manager
-    from ..core.transaction_logger import get_transaction_logger
-    from ..providers.anidb.search_service import get_search_service
-    from ..providers.anidb.titles_downloader import TitlesDownloader
+    from mcp_server_anime.core.database_config import (
+        get_local_db_config,
+        validate_config,
+    )
+    from mcp_server_anime.core.index_optimization import create_index_optimizer
+    from mcp_server_anime.core.multi_provider_db import get_multi_provider_database
+    from mcp_server_anime.core.schema_manager import create_schema_manager
+    from mcp_server_anime.core.transaction_logger import get_transaction_logger
+    from mcp_server_anime.providers.anidb.search_service import get_search_service
+    from mcp_server_anime.providers.anidb.titles_downloader import TitlesDownloader
 except ImportError:
     # Fall back to absolute imports (when run directly)
     sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
@@ -470,7 +473,7 @@ Examples:
     )
 
     # config command
-    config_parser = subparsers.add_parser("config", help="Show current configuration")
+    subparsers.add_parser("config", help="Show current configuration")
 
     args = parser.parse_args()
 

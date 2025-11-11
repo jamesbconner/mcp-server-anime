@@ -18,7 +18,7 @@ def run_pytest_command(args: list[str]) -> int:
     Returns:
         Exit code from pytest
     """
-    cmd = ["pytest"] + args
+    cmd = ["pytest", *args]
     result = subprocess.run(cmd)
     return result.returncode
 
