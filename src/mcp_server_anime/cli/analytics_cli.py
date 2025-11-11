@@ -19,13 +19,13 @@ logger = logging.getLogger(__name__)
 # Handle imports for both direct execution and module execution
 try:
     # Try relative imports first (when run as module with python -m)
-    from ..core.analytics_scheduler import get_analytics_scheduler
-    from ..core.database_config import get_local_db_config
-    from ..core.index_optimization import create_index_optimizer
-    from ..core.multi_provider_db import get_multi_provider_database
-    from ..core.transaction_logger import get_transaction_logger
-    from ..providers.anidb.config import load_config
-    from ..providers.anidb.service import create_anidb_service
+    from mcp_server_anime.core.analytics_scheduler import get_analytics_scheduler
+    from mcp_server_anime.core.database_config import get_local_db_config
+    from mcp_server_anime.core.index_optimization import create_index_optimizer
+    from mcp_server_anime.core.multi_provider_db import get_multi_provider_database
+    from mcp_server_anime.core.transaction_logger import get_transaction_logger
+    from mcp_server_anime.providers.anidb.config import load_config
+    from mcp_server_anime.providers.anidb.service import create_anidb_service
 except ImportError:
     # Fall back to absolute imports (when run directly)
     sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
@@ -419,7 +419,9 @@ class AnalyticsCLI:
                         get_service_stats(), timeout=3.0
                     )
                     service_available = True
-                except TimeoutError:
+                except (asyncio.TimeoutError, TimeoutError):  # noqa: UP041
+                    # Catch both for compatibility: asyncio.wait_for raises different
+                    # exceptions in Python 3.11-3.12 vs 3.13+
                     logger.debug("Service cache stats retrieval timed out")
                     service_available = False
                 except Exception as e:
