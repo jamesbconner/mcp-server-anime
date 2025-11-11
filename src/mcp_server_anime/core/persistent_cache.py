@@ -12,7 +12,7 @@ from typing import Any
 from .cache import TTLCache, generate_cache_key
 from .exceptions import DatabaseError
 from .logging_config import get_logger, log_cache_operation
-from .models import AnimeDetails, AnimeSearchResult
+from .models import AnimeDetails
 from .multi_provider_db import get_multi_provider_database
 from .persistent_cache_models import (
     CacheSerializer,
@@ -363,9 +363,23 @@ class PersistentCache:
         """
         if isinstance(value, AnimeDetails):
             return CacheSerializer.serialize_anime_details(value)
-        elif isinstance(value, list) and all(
-            isinstance(item, AnimeSearchResult) for item in value
-        ):
+        elif isinstance(value, list):
+            # Handle lists (including empty lists) of search results
+            if not value:
+                # Empty list is valid
+                return CacheSerializer.serialize_search_results(value)
+
+            # Check if all items are AnimeSearchResult (duck typing for import path compatibility)
+            for item in value:
+                # Check by class name to handle different import paths (src.mcp_server_anime vs mcp_server_anime)
+                if type(item).__name__ != "AnimeSearchResult" or not hasattr(
+                    item, "aid"
+                ):
+                    raise ValueError(
+                        f"Unsupported list item type in cache value. "
+                        f"Expected AnimeSearchResult, got: {type(item).__name__}"
+                    )
+
             return CacheSerializer.serialize_search_results(value)
         else:
             raise ValueError(f"Unsupported cache value type: {type(value)}")

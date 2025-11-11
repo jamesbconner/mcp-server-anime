@@ -143,20 +143,6 @@ def create_search_tool(
             ValueError: If query is too short or limit is invalid
             RuntimeError: If the API request fails
         """
-        # Add provider info to docstring at runtime
-        provider_search_tool.__doc__ = (
-            f"Search for anime by title using {display_name}.\n\n"
-            f"Search the {display_name} database for anime matching the provided query string.\n"
-            "Returns basic information about matching anime including title, type, and year.\n\n"
-            "Args:\n"
-            f"    query: Search term for anime title (minimum {min_length} characters)\n"
-            f"    limit: Maximum number of results to return (default: 10, max: {max_results})\n\n"
-            "Returns:\n"
-            "    List of anime search results with basic information\n\n"
-            "Raises:\n"
-            "    ValueError: If query is too short or limit is invalid\n"
-            "    RuntimeError: If the API request fails"
-        )
         set_request_context(operation=f"{tool_name}_tool")
         logger.info(
             f"{display_name} search tool requested",
@@ -233,6 +219,21 @@ def create_search_tool(
             else:
                 raise RuntimeError(f"{display_name} search failed: {e}") from e
 
+    # Set provider-specific docstring (runs once at registration time)
+    provider_search_tool.__doc__ = (
+        f"Search for anime by title using {display_name}.\n\n"
+        f"Search the {display_name} database for anime matching the provided query string.\n"
+        "Returns basic information about matching anime including title, type, and year.\n\n"
+        "Args:\n"
+        f"    query: Search term for anime title (minimum {min_length} characters)\n"
+        f"    limit: Maximum number of results to return (default: 10, max: {max_results})\n\n"
+        "Returns:\n"
+        "    List of anime search results with basic information\n\n"
+        "Raises:\n"
+        "    ValueError: If query is too short or limit is invalid\n"
+        "    RuntimeError: If the API request fails"
+    )
+
 
 def create_details_tool(
     mcp: FastMCP, provider: AnimeDataProvider, tool_name: str
@@ -264,19 +265,6 @@ def create_details_tool(
             ValueError: If anime ID is invalid
             RuntimeError: If the API request fails or anime is not found
         """
-        # Add provider info to docstring at runtime
-        provider_details_tool.__doc__ = (
-            f"Get detailed information about a specific anime from {display_name}.\n\n"
-            f"Retrieve comprehensive anime data from {display_name} including synopsis, ratings,\n"
-            "episode count, air dates, creators, and related anime information.\n\n"
-            "Args:\n"
-            f"    anime_id: Unique anime identifier for {display_name}\n\n"
-            "Returns:\n"
-            "    Dictionary containing detailed anime information\n\n"
-            "Raises:\n"
-            "    ValueError: If anime ID is invalid\n"
-            "    RuntimeError: If the API request fails or anime is not found"
-        )
         set_request_context(operation=f"{tool_name}_tool")
         logger.info(
             f"{display_name} details tool requested",
@@ -323,6 +311,20 @@ def create_details_tool(
             else:
                 raise RuntimeError(f"{display_name} details fetch failed: {e}") from e
 
+    # Set provider-specific docstring (runs once at registration time)
+    provider_details_tool.__doc__ = (
+        f"Get detailed information about a specific anime from {display_name}.\n\n"
+        f"Retrieve comprehensive anime data from {display_name} including synopsis, ratings,\n"
+        "episode count, air dates, creators, and related anime information.\n\n"
+        "Args:\n"
+        f"    anime_id: Unique anime identifier for {display_name}\n\n"
+        "Returns:\n"
+        "    Dictionary containing detailed anime information\n\n"
+        "Raises:\n"
+        "    ValueError: If anime ID is invalid\n"
+        "    RuntimeError: If the API request fails or anime is not found"
+    )
+
 
 def create_recommendations_tool(
     mcp: FastMCP, provider: AnimeDataProvider, tool_name: str
@@ -354,18 +356,6 @@ def create_recommendations_tool(
             ValueError: If anime ID is invalid
             RuntimeError: If the API request fails
         """
-        # Add provider info to docstring at runtime
-        provider_recommendations_tool.__doc__ = (
-            f"Get anime recommendations based on a specific anime from {display_name}.\n\n"
-            "Args:\n"
-            f"    anime_id: Unique anime identifier for {display_name}\n"
-            "    limit: Maximum number of recommendations to return (default: 10)\n\n"
-            "Returns:\n"
-            "    List of recommended anime\n\n"
-            "Raises:\n"
-            "    ValueError: If anime ID is invalid\n"
-            "    RuntimeError: If the API request fails"
-        )
         set_request_context(operation=f"{tool_name}_tool")
         logger.info(
             f"{display_name} recommendations tool requested",
@@ -426,6 +416,19 @@ def create_recommendations_tool(
                 raise ValueError(f"{e.message}: {e.details or ''}") from e
             else:
                 raise RuntimeError(f"{display_name} recommendations failed: {e}") from e
+
+    # Set provider-specific docstring (runs once at registration time)
+    provider_recommendations_tool.__doc__ = (
+        f"Get anime recommendations based on a specific anime from {display_name}.\n\n"
+        "Args:\n"
+        f"    anime_id: Unique anime identifier for {display_name}\n"
+        "    limit: Maximum number of recommendations to return (default: 10)\n\n"
+        "Returns:\n"
+        "    List of recommended anime\n\n"
+        "Raises:\n"
+        "    ValueError: If anime ID is invalid\n"
+        "    RuntimeError: If the API request fails"
+    )
 
 
 def register_provider_tools(mcp: FastMCP, provider: AnimeDataProvider) -> list[str]:
