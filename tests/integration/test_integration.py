@@ -26,7 +26,6 @@ from tests.providers.anidb.fixtures.api_mocks import (
     mock_http_get,
     setup_common_mocks,
     setup_error_scenarios,
-    setup_rate_limiting_mocks,
 )
 
 # Skip integration tests if environment variable is set
@@ -44,11 +43,14 @@ class TestAniDBAPIIntegration:
     """Integration tests for AniDB API functionality with mocked responses."""
 
     @pytest.fixture
-    def integration_config(self) -> AniDBConfig:
+    def integration_config(self, tmp_path_factory) -> AniDBConfig:
         """Create configuration optimized for integration testing.
 
         Uses shorter delays for faster test execution since we're using mocks.
         """
+        import uuid
+
+        unique_id = str(uuid.uuid4())[:8]
         return AniDBConfig(
             client_name="mcp-server-anidb-integration-test",
             client_version=1,
@@ -57,14 +59,32 @@ class TestAniDBAPIIntegration:
             max_retries=2,  # Fewer retries for faster test execution
             cache_ttl=300,  # 5 minutes cache for testing
             timeout=10.0,  # Reasonable timeout for mocked responses
+            cache_db_path=str(
+                tmp_path_factory.mktemp(f"integration_test_{unique_id}")
+                / "integration_test_cache.db"
+            ),
         )
 
-    @pytest.fixture
+    @pytest.fixture(scope="function")
     async def service(self, integration_config: AniDBConfig) -> AniDBService:
         """Create AniDB service for integration testing with mocked HTTP responses."""
+        # Close and reset global database instance to ensure each test gets a fresh database
+        import src.mcp_server_anime.core.multi_provider_db as db_module
+
+        if db_module._database_instance is not None:
+            await db_module._database_instance.close()
+        db_module._database_instance = None
+
         service = AniDBService(integration_config)
+        # Clear cache before each test to ensure clean state
+        await service.clear_cache()
         yield service
         await service.close()
+
+        # Close and reset again after test
+        if db_module._database_instance is not None:
+            await db_module._database_instance.close()
+        db_module._database_instance = None
 
     @pytest.mark.asyncio
     @pytest.mark.integration
@@ -135,7 +155,7 @@ class TestAniDBAPIIntegration:
         # Mock the HTTP client to use our API mocker
         with patch("src.mcp_server_anime.core.http_client.HTTPClient.get") as mock_get:
 
-            async def mock_get_response(url: str, params: dict = None, **kwargs):
+            async def mock_get_response(url: str, params: dict | None = None, **kwargs):
                 mock_response = await mock_http_get(url, params, **kwargs)
 
                 # Create a mock response object that matches the expected interface
@@ -186,23 +206,18 @@ class TestAniDBAPIIntegration:
         - Multiple requests work correctly with mocked responses
         - Timing between requests respects configured delays
         """
-        # Set up rate limiting mocks with small delays
-        setup_rate_limiting_mocks()
+        # Mock search results
+        mock_results = [
+            AnimeSearchResult(aid=1, title="Test Anime", type="TV Series", year=2020)
+        ]
 
-        # Mock the HTTP client to use our API mocker
-        with patch("src.mcp_server_anime.core.http_client.HTTPClient.get") as mock_get:
-
-            async def mock_get_response(url: str, params: dict = None, **kwargs):
-                mock_response = await mock_http_get(url, params, **kwargs)
-
-                # Create a mock response object that matches the expected interface
-                response = AsyncMock()
-                response.status_code = mock_response.status_code
-                response.text = mock_response.content
-                response.headers = mock_response.headers
-                return response
-
-            mock_get.side_effect = mock_get_response
+        # Mock the search service
+        with patch(
+            "src.mcp_server_anime.providers.anidb.service.get_search_service"
+        ) as mock_get_search_service:
+            mock_search_service = AsyncMock()
+            mock_search_service.search_anime.return_value = mock_results
+            mock_get_search_service.return_value = mock_search_service
 
             # Make multiple search requests and measure timing
             search_queries = ["evangelion", "cowboy bebop", "akira"]
@@ -243,23 +258,18 @@ class TestAniDBAPIIntegration:
         - Rate limiting works correctly with asyncio concurrency
         - All requests complete successfully despite rate limiting
         """
-        # Set up comprehensive mocks
-        setup_common_mocks()
+        # Mock search results
+        mock_results = [
+            AnimeSearchResult(aid=1, title="Test Anime", type="TV Series", year=2020)
+        ]
 
-        # Mock the HTTP client to use our API mocker
-        with patch("src.mcp_server_anime.core.http_client.HTTPClient.get") as mock_get:
-
-            async def mock_get_response(url: str, params: dict = None, **kwargs):
-                mock_response = await mock_http_get(url, params, **kwargs)
-
-                # Create a mock response object that matches the expected interface
-                response = AsyncMock()
-                response.status_code = mock_response.status_code
-                response.text = mock_response.content
-                response.headers = mock_response.headers
-                return response
-
-            mock_get.side_effect = mock_get_response
+        # Mock the search service
+        with patch(
+            "src.mcp_server_anime.providers.anidb.service.get_search_service"
+        ) as mock_get_search_service:
+            mock_search_service = AsyncMock()
+            mock_search_service.search_anime.return_value = mock_results
+            mock_get_search_service.return_value = mock_search_service
 
             # Create multiple concurrent search tasks
             search_queries = ["naruto", "bleach", "one piece"]
@@ -305,23 +315,20 @@ class TestAniDBAPIIntegration:
         - Cache keys work correctly with request parameters
         - Cached responses are identical to original mock responses
         """
-        # Set up comprehensive mocks
-        setup_common_mocks()
+        # Mock search results
+        mock_results = [
+            AnimeSearchResult(
+                aid=1, title="Ghost in the Shell", type="TV Series", year=1995
+            )
+        ]
 
-        # Mock the HTTP client to use our API mocker
-        with patch("src.mcp_server_anime.core.http_client.HTTPClient.get") as mock_get:
-
-            async def mock_get_response(url: str, params: dict = None, **kwargs):
-                mock_response = await mock_http_get(url, params, **kwargs)
-
-                # Create a mock response object that matches the expected interface
-                response = AsyncMock()
-                response.status_code = mock_response.status_code
-                response.text = mock_response.content
-                response.headers = mock_response.headers
-                return response
-
-            mock_get.side_effect = mock_get_response
+        # Mock the search service
+        with patch(
+            "src.mcp_server_anime.providers.anidb.service.get_search_service"
+        ) as mock_get_search_service:
+            mock_search_service = AsyncMock()
+            mock_search_service.search_anime.return_value = mock_results
+            mock_get_search_service.return_value = mock_search_service
 
             query = "ghost in the shell"
             limit = 3
@@ -354,8 +361,8 @@ class TestAniDBAPIIntegration:
         # Verify cache statistics
         cache_stats = await service.get_cache_stats()
         assert cache_stats is not None
-        assert cache_stats["hits"] >= 1, "Should have at least one cache hit"
-        assert cache_stats["total_entries"] >= 1, (
+        assert cache_stats["total_hits"] >= 1, "Should have at least one cache hit"
+        assert (cache_stats["memory_entries"] + cache_stats["db_entries"]) >= 1, (
             "Should have at least one cached entry"
         )
 
@@ -383,7 +390,7 @@ class TestAniDBAPIErrorHandling:
         ) as mock_create_client:
             mock_client = AsyncMock()
 
-            async def mock_get(url: str, params: dict = None, **kwargs):
+            async def mock_get(url: str, params: dict | None = None, **kwargs):
                 from tests.fixtures.api_mocks import mock_http_get
 
                 mock_response = await mock_http_get(url, params, **kwargs)
@@ -499,23 +506,13 @@ class TestAniDBAPIErrorHandling:
         - Searches with no results return empty lists (not errors)
         - XML parsing handles empty result sets correctly with mocked responses
         """
-        # Set up comprehensive mocks
-        setup_common_mocks()
-
-        # Mock the HTTP client to use our API mocker
-        with patch("src.mcp_server_anime.core.http_client.HTTPClient.get") as mock_get:
-
-            async def mock_get_response(url: str, params: dict = None, **kwargs):
-                mock_response = await mock_http_get(url, params, **kwargs)
-
-                # Create a mock response object that matches the expected interface
-                response = AsyncMock()
-                response.status_code = mock_response.status_code
-                response.text = mock_response.content
-                response.headers = mock_response.headers
-                return response
-
-            mock_get.side_effect = mock_get_response
+        # Mock the search service to return empty results
+        with patch(
+            "src.mcp_server_anime.providers.anidb.service.get_search_service"
+        ) as mock_get_search_service:
+            mock_search_service = AsyncMock()
+            mock_search_service.search_anime.return_value = []  # Empty results
+            mock_get_search_service.return_value = mock_search_service
 
             # Search for something very unlikely to exist (configured in mocks to return empty)
             unlikely_query = "xyzabc123nonexistentanime999"
@@ -540,29 +537,22 @@ class TestAniDBServiceFactory:
         - Default configuration works with mocked responses
         - Service can be used immediately after creation
         """
-        # Set up mocks
-        setup_common_mocks()
-
         # Create service using factory function
         service = await create_anidb_service()
 
         try:
-            # Mock the HTTP client to use our API mocker
+            # Mock search results
+            mock_results = [
+                AnimeSearchResult(aid=28, title="Akira", type="Movie", year=1988)
+            ]
+
+            # Mock the search service
             with patch(
-                "src.mcp_server_anime.core.http_client.HTTPClient.get"
-            ) as mock_get:
-
-                async def mock_get_response(url: str, params: dict = None, **kwargs):
-                    mock_response = await mock_http_get(url, params, **kwargs)
-
-                    # Create a mock response object that matches the expected interface
-                    response = AsyncMock()
-                    response.status_code = mock_response.status_code
-                    response.text = mock_response.content
-                    response.headers = mock_response.headers
-                    return response
-
-                mock_get.side_effect = mock_get_response
+                "src.mcp_server_anime.providers.anidb.service.get_search_service"
+            ) as mock_get_search_service:
+                mock_search_service = AsyncMock()
+                mock_search_service.search_anime.return_value = mock_results
+                mock_get_search_service.return_value = mock_search_service
 
                 # Verify service works with a simple search
                 results = await service.search_anime("akira", limit=3)
@@ -583,9 +573,6 @@ class TestAniDBServiceFactory:
         - Service works correctly within context manager with mocks
         - Resources are properly released after context exit
         """
-        # Set up mocks
-        setup_common_mocks()
-
         config = AniDBConfig(
             client_name="mcp-server-anidb-integration-test",
             rate_limit_delay=0.1,  # Fast for testing
@@ -593,22 +580,20 @@ class TestAniDBServiceFactory:
 
         # Use service as context manager
         async with AniDBService(config) as service:
-            # Mock the HTTP client to use our API mocker
+            # Mock search results
+            mock_results = [
+                AnimeSearchResult(
+                    aid=523, title="My Neighbor Totoro", type="Movie", year=1988
+                )
+            ]
+
+            # Mock the search service
             with patch(
-                "src.mcp_server_anime.core.http_client.HTTPClient.get"
-            ) as mock_get:
-
-                async def mock_get_response(url: str, params: dict = None, **kwargs):
-                    mock_response = await mock_http_get(url, params, **kwargs)
-
-                    # Create a mock response object that matches the expected interface
-                    response = AsyncMock()
-                    response.status_code = mock_response.status_code
-                    response.text = mock_response.content
-                    response.headers = mock_response.headers
-                    return response
-
-                mock_get.side_effect = mock_get_response
+                "src.mcp_server_anime.providers.anidb.service.get_search_service"
+            ) as mock_get_search_service:
+                mock_search_service = AsyncMock()
+                mock_search_service.search_anime.return_value = mock_results
+                mock_get_search_service.return_value = mock_search_service
 
                 # Verify service is working
                 results = await service.search_anime("totoro", limit=2)

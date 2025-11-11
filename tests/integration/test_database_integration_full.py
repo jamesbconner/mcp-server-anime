@@ -305,7 +305,7 @@ class TestFullDatabaseIntegration:
 
         # Schedule post-update maintenance
         schedule_time = datetime.now() + timedelta(minutes=1)
-        task_id = await maintenance_scheduler.schedule_task(
+        await maintenance_scheduler.schedule_task(
             task_name="Post-Update Optimization",
             task_type="optimize",
             schedule_time=schedule_time,

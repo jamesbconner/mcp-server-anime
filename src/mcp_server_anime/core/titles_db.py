@@ -51,12 +51,12 @@ class TitlesDatabase:
                 """)
 
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_title_lower 
+                    CREATE INDEX IF NOT EXISTS idx_title_lower
                     ON anime_titles(title_lower)
                 """)
 
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_aid 
+                    CREATE INDEX IF NOT EXISTS idx_aid
                     ON anime_titles(aid)
                 """)
 
@@ -153,7 +153,7 @@ class TitlesDatabase:
 
                             conn.execute(
                                 """
-                                INSERT OR IGNORE INTO anime_titles 
+                                INSERT OR IGNORE INTO anime_titles
                                 (aid, type, language, title, title_lower)
                                 VALUES (?, ?, ?, ?, ?)
                             """,
@@ -244,7 +244,7 @@ class TitlesDatabase:
                     """
                     SELECT DISTINCT aid, title, language, type
                     FROM anime_titles
-                    WHERE title_lower LIKE ? 
+                    WHERE title_lower LIKE ?
                     AND title_lower NOT LIKE ?
                     AND title_lower != ?
                     ORDER BY type ASC, language ASC

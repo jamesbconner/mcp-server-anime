@@ -367,7 +367,7 @@ class TestWithErrorHandlingDecorator:
             raise ValueError("Test error")
 
         # Call function multiple times to trigger circuit breaker
-        for i in range(6):  # Exceed the default threshold of 5
+        for _i in range(6):  # Exceed the default threshold of 5
             try:
                 await test_function()
             except ServiceError:

@@ -243,7 +243,7 @@ In CI/CD environments, integration tests are skipped by default unless explicitl
    ```bash
    # Validate test environment
    poetry run python scripts/test_runner.py validate
-   
+
    # Check test discovery
    poetry run pytest --collect-only
    ```
@@ -252,7 +252,7 @@ In CI/CD environments, integration tests are skipped by default unless explicitl
    ```bash
    # Generate detailed coverage report
    poetry run test-coverage
-   
+
    # Check specific file coverage
    poetry run pytest --cov=src/mcp_server_anime/http_client.py --cov-report=term-missing
    ```
@@ -318,7 +318,7 @@ The main pytest configuration is in `pytest.ini`:
 ```ini
 [pytest]
 testpaths = tests
-addopts = 
+addopts =
     --verbose
     --tb=short
     --strict-markers

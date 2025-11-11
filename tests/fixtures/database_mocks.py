@@ -418,9 +418,7 @@ class MockTransactionLogger:
         timestamp = datetime.fromisoformat(transaction["timestamp"])
         if start_time and timestamp < start_time:
             return False
-        if end_time and timestamp > end_time:
-            return False
-        return True
+        return not (end_time and timestamp > end_time)
 
     def _calculate_success_rate(self, transactions: list[dict[str, Any]]) -> float:
         """Calculate success rate for transactions."""

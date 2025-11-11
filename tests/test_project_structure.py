@@ -9,7 +9,7 @@ def test_package_imports() -> None:
     """Test that the main package can be imported."""
     import mcp_server_anime
 
-    assert mcp_server_anime.__version__ == "0.2.0"
+    assert mcp_server_anime.__version__ == "0.2.1"
     assert mcp_server_anime.__author__ == "MCP Server Anime"
     assert "anime data" in mcp_server_anime.__description__.lower()
 

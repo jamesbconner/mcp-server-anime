@@ -10,9 +10,9 @@ from pathlib import Path
 
 import httpx
 
-from ...core.exceptions import APIError, NetworkError
-from ...core.logging_config import get_logger
-from ...core.multi_provider_db import get_multi_provider_database
+from mcp_server_anime.core.exceptions import APIError, NetworkError
+from mcp_server_anime.core.logging_config import get_logger
+from mcp_server_anime.core.multi_provider_db import get_multi_provider_database
 
 logger = get_logger(__name__)
 
@@ -160,10 +160,7 @@ class TitlesDownloader:
             return True
 
         # Download if file is empty or very small (likely corrupted)
-        if file_info["size"] < 1000:  # Expect at least 1KB
-            return True
-
-        return False
+        return file_info["size"] < 1000  # Expect at least 1KB
 
     async def download_titles_file(self, force: bool = False) -> bool:
         """Download the AniDB titles file with enhanced protection.

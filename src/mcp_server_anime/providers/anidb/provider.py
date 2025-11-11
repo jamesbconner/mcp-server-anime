@@ -18,10 +18,15 @@ while maintaining all AniDB-specific features and optimizations.
 
 from typing import Any
 
-from ...core.exceptions import ProviderError
-from ...core.logging_config import get_logger
-from ...core.models import AnimeDetails, AnimeSearchResult
-from ..base import AnimeDataProvider, ProviderCapabilities, ProviderInfo
+from mcp_server_anime.core.exceptions import ProviderError
+from mcp_server_anime.core.logging_config import get_logger
+from mcp_server_anime.core.models import AnimeDetails, AnimeSearchResult
+from mcp_server_anime.providers.base import (
+    AnimeDataProvider,
+    ProviderCapabilities,
+    ProviderInfo,
+)
+
 from .config import AniDBConfig, load_config
 from .service import AniDBService, create_anidb_service
 

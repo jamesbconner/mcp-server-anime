@@ -318,7 +318,7 @@ error_handler = ErrorHandler()
 def with_error_handling(
     operation: str,
     service: str | None = None,
-    fallback_value: T | None = None,
+    fallback_value: Any | None = None,
     reraise: bool = True,
 ) -> Callable[[F], F]:
     """Decorator for adding comprehensive error handling to functions.
@@ -431,8 +431,7 @@ def _handle_exception(
         return error_handler.handle_validation_error(error, operation)
 
     elif (
-        isinstance(error, (ValueError, TypeError))
-        and "validation" in str(error).lower()
+        isinstance(error, ValueError | TypeError) and "validation" in str(error).lower()
     ):
         return create_validation_error(
             f"Validation error during {operation}: {error}",
@@ -449,7 +448,7 @@ def _handle_exception(
         ).add_context("service", service)
 
 
-async def with_retry(
+async def with_retry[T](
     func: Callable[..., Awaitable[T]],
     max_retries: int = 3,
     base_delay: float = 1.0,

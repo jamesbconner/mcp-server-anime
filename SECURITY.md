@@ -71,7 +71,7 @@ User Input → TableNameValidator → SecureQueryHelper → Parameterized Query 
 ALLOWED_TABLE_PATTERNS = {
     "anidb": [
         "{provider}_titles",
-        "{provider}_metadata", 
+        "{provider}_metadata",
         "{provider}_cache"
     ],
     "general": [

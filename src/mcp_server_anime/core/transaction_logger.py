@@ -54,7 +54,7 @@ class TransactionLogger:
                 with sqlite3.connect(self.db.db_path) as conn:
                     conn.execute(
                         """
-                        INSERT INTO search_transactions 
+                        INSERT INTO search_transactions
                         (timestamp, provider, query, result_count, response_time_ms, client_identifier)
                         VALUES (?, ?, ?, ?, ?, ?)
                     """,
@@ -98,7 +98,7 @@ class TransactionLogger:
                 # Total searches
                 cursor = conn.execute(
                     """
-                    SELECT COUNT(*) FROM search_transactions 
+                    SELECT COUNT(*) FROM search_transactions
                     WHERE provider = ? AND timestamp >= ?
                 """,
                     (provider, cutoff_time.isoformat()),
@@ -108,7 +108,7 @@ class TransactionLogger:
                 # Average response time
                 cursor = conn.execute(
                     """
-                    SELECT AVG(response_time_ms) FROM search_transactions 
+                    SELECT AVG(response_time_ms) FROM search_transactions
                     WHERE provider = ? AND timestamp >= ?
                 """,
                     (provider, cutoff_time.isoformat()),
@@ -118,7 +118,7 @@ class TransactionLogger:
                 # Average results per search
                 cursor = conn.execute(
                     """
-                    SELECT AVG(result_count) FROM search_transactions 
+                    SELECT AVG(result_count) FROM search_transactions
                     WHERE provider = ? AND timestamp >= ?
                 """,
                     (provider, cutoff_time.isoformat()),
@@ -128,10 +128,10 @@ class TransactionLogger:
                 # Most common queries
                 cursor = conn.execute(
                     """
-                    SELECT query, COUNT(*) as count FROM search_transactions 
+                    SELECT query, COUNT(*) as count FROM search_transactions
                     WHERE provider = ? AND timestamp >= ?
-                    GROUP BY query 
-                    ORDER BY count DESC 
+                    GROUP BY query
+                    ORDER BY count DESC
                     LIMIT 10
                 """,
                     (provider, cutoff_time.isoformat()),
@@ -143,11 +143,11 @@ class TransactionLogger:
                 # Searches by hour
                 cursor = conn.execute(
                     """
-                    SELECT 
+                    SELECT
                         strftime('%H', timestamp) as hour,
                         COUNT(*) as count,
                         AVG(response_time_ms) as avg_time
-                    FROM search_transactions 
+                    FROM search_transactions
                     WHERE provider = ? AND timestamp >= ?
                     GROUP BY hour
                     ORDER BY hour
@@ -166,15 +166,15 @@ class TransactionLogger:
                 # Performance distribution
                 cursor = conn.execute(
                     """
-                    SELECT 
-                        CASE 
+                    SELECT
+                        CASE
                             WHEN response_time_ms < 10 THEN 'excellent'
                             WHEN response_time_ms < 50 THEN 'good'
                             WHEN response_time_ms < 100 THEN 'fair'
                             ELSE 'poor'
                         END as performance,
                         COUNT(*) as count
-                    FROM search_transactions 
+                    FROM search_transactions
                     WHERE provider = ? AND timestamp >= ?
                     GROUP BY performance
                 """,
@@ -218,12 +218,12 @@ class TransactionLogger:
                 # Overall totals
                 cursor = conn.execute(
                     """
-                    SELECT 
+                    SELECT
                         COUNT(*) as total_searches,
                         COUNT(DISTINCT provider) as active_providers,
                         AVG(response_time_ms) as avg_response_time,
                         AVG(result_count) as avg_results
-                    FROM search_transactions 
+                    FROM search_transactions
                     WHERE timestamp >= ?
                 """,
                     (cutoff_time.isoformat(),),
@@ -238,12 +238,12 @@ class TransactionLogger:
                 # Stats by provider
                 cursor = conn.execute(
                     """
-                    SELECT 
+                    SELECT
                         provider,
                         COUNT(*) as searches,
                         AVG(response_time_ms) as avg_time,
                         AVG(result_count) as avg_results
-                    FROM search_transactions 
+                    FROM search_transactions
                     WHERE timestamp >= ?
                     GROUP BY provider
                     ORDER BY searches DESC
@@ -265,9 +265,9 @@ class TransactionLogger:
                 cursor = conn.execute(
                     """
                     SELECT timestamp, provider, query, result_count, response_time_ms
-                    FROM search_transactions 
+                    FROM search_transactions
                     WHERE timestamp >= ?
-                    ORDER BY timestamp DESC 
+                    ORDER BY timestamp DESC
                     LIMIT 10
                 """,
                     (cutoff_time.isoformat(),),
@@ -318,7 +318,7 @@ class TransactionLogger:
             with sqlite3.connect(self.db.db_path) as conn:
                 cursor = conn.execute(
                     """
-                    DELETE FROM search_transactions 
+                    DELETE FROM search_transactions
                     WHERE created_at < ?
                 """,
                     (cutoff_date.isoformat(),),
@@ -356,15 +356,15 @@ class TransactionLogger:
                 # Query length distribution
                 cursor = conn.execute(
                     """
-                    SELECT 
-                        CASE 
+                    SELECT
+                        CASE
                             WHEN LENGTH(query) < 3 THEN 'short'
                             WHEN LENGTH(query) < 10 THEN 'medium'
                             ELSE 'long'
                         END as length_category,
                         COUNT(*) as count,
                         AVG(result_count) as avg_results
-                    FROM search_transactions 
+                    FROM search_transactions
                     WHERE provider = ? AND timestamp >= ?
                     GROUP BY length_category
                 """,
@@ -384,7 +384,7 @@ class TransactionLogger:
                 cursor = conn.execute(
                     """
                     SELECT query, COUNT(*) as count
-                    FROM search_transactions 
+                    FROM search_transactions
                     WHERE provider = ? AND timestamp >= ? AND result_count = 0
                     GROUP BY query
                     ORDER BY count DESC
@@ -401,7 +401,7 @@ class TransactionLogger:
                 cursor = conn.execute(
                     """
                     SELECT query, AVG(result_count) as avg_results, COUNT(*) as searches
-                    FROM search_transactions 
+                    FROM search_transactions
                     WHERE provider = ? AND timestamp >= ? AND result_count > 0
                     GROUP BY query
                     HAVING searches >= 2
@@ -454,7 +454,7 @@ class TransactionLogger:
                 cursor = conn.execute(
                     """
                     SELECT response_time_ms
-                    FROM search_transactions 
+                    FROM search_transactions
                     WHERE provider = ? AND timestamp >= ?
                     ORDER BY response_time_ms
                 """,
@@ -493,10 +493,10 @@ class TransactionLogger:
                 # SLA compliance (sub-100ms target)
                 cursor = conn.execute(
                     """
-                    SELECT 
+                    SELECT
                         COUNT(CASE WHEN response_time_ms < 100 THEN 1 END) as under_100ms,
                         COUNT(*) as total
-                    FROM search_transactions 
+                    FROM search_transactions
                     WHERE provider = ? AND timestamp >= ?
                 """,
                     (provider, cutoff_time.isoformat()),

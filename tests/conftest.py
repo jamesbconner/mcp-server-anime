@@ -243,7 +243,7 @@ Example CI configurations:
 GitHub Actions:
   - name: Run unit tests
     run: pytest -m "not integration"
-  
+
   - name: Run integration tests
     run: pytest -m integration
     env:
@@ -253,7 +253,7 @@ GitLab CI:
   unit_tests:
     script:
       - pytest -m "not integration"
-  
+
   integration_tests:
     script:
       - pytest -m integration
@@ -266,13 +266,13 @@ GitLab CI:
 Local development:
   # Run all tests including integration
   pytest
-  
+
   # Run only unit tests
   pytest -m "not integration"
-  
+
   # Run only integration tests
   pytest -m integration
-  
+
   # Skip slow tests
   pytest --skip-slow
 """

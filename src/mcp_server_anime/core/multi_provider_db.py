@@ -5,6 +5,7 @@ with provider-specific tables, metadata management, and cross-provider functiona
 """
 
 import asyncio
+import contextlib
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -12,7 +13,7 @@ from typing import Any
 
 from .exceptions import ConfigurationError, DatabaseError
 from .logging_config import get_logger
-from .security import SecureQueryHelper, SecurityLogger, TableNameValidator
+from .security import SecureQueryHelper, TableNameValidator
 
 logger = get_logger(__name__)
 
@@ -68,12 +69,12 @@ class MultiProviderDatabase:
 
                 # Create indexes for search transactions
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_search_transactions_provider 
+                    CREATE INDEX IF NOT EXISTS idx_search_transactions_provider
                     ON search_transactions(provider)
                 """)
 
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_search_transactions_timestamp 
+                    CREATE INDEX IF NOT EXISTS idx_search_transactions_timestamp
                     ON search_transactions(timestamp)
                 """)
 
@@ -105,32 +106,32 @@ class MultiProviderDatabase:
 
                 # Create indexes for persistent cache
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_expires_at 
+                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_expires_at
                     ON persistent_cache(expires_at)
                 """)
 
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_method 
+                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_method
                     ON persistent_cache(method_name)
                 """)
 
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_created_at 
+                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_created_at
                     ON persistent_cache(created_at)
                 """)
 
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_access_count 
+                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_access_count
                     ON persistent_cache(access_count)
                 """)
 
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_provider_source 
+                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_provider_source
                     ON persistent_cache(provider_source)
                 """)
 
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_provider_method 
+                    CREATE INDEX IF NOT EXISTS idx_persistent_cache_provider_method
                     ON persistent_cache(provider_source, method_name)
                 """)
 
@@ -189,17 +190,17 @@ class MultiProviderDatabase:
 
                     # Create indexes for fast searching
                     conn.execute(f"""
-                        CREATE INDEX IF NOT EXISTS idx_{provider_name}_titles_normalized 
+                        CREATE INDEX IF NOT EXISTS idx_{provider_name}_titles_normalized
                         ON {titles_table}(title_normalized)
                     """)
 
                     conn.execute(f"""
-                        CREATE INDEX IF NOT EXISTS idx_{provider_name}_titles_aid 
+                        CREATE INDEX IF NOT EXISTS idx_{provider_name}_titles_aid
                         ON {titles_table}(aid)
                     """)
 
                     conn.execute(f"""
-                        CREATE INDEX IF NOT EXISTS idx_{provider_name}_titles_type 
+                        CREATE INDEX IF NOT EXISTS idx_{provider_name}_titles_type
                         ON {titles_table}(title_type)
                     """)
 
@@ -268,9 +269,11 @@ class MultiProviderDatabase:
                 metadata_table = TableNameValidator.validate_table_name(
                     f"{provider_name}_metadata", provider_name
                 )
-                
+
                 # Use secure query helper
-                query, params = SecureQueryHelper.build_metadata_query(metadata_table, key)
+                query, params = SecureQueryHelper.build_metadata_query(
+                    metadata_table, key
+                )
                 cursor = conn.execute(query, params)
                 result = cursor.fetchone()
                 return result[0] if result else None
@@ -354,10 +357,10 @@ class MultiProviderDatabase:
                     ["DISTINCT aid", "title", "language", "title_type"],
                     where_clause="title_normalized = ?",
                     order_by="title_type ASC, language ASC",
-                    limit=limit
+                    limit=limit,
                 )
                 exact_results = conn.execute(
-                    exact_query, [query_lower] + exact_params
+                    exact_query, [query_lower, *exact_params]
                 ).fetchall()
 
                 if len(exact_results) >= limit:
@@ -370,10 +373,10 @@ class MultiProviderDatabase:
                     ["DISTINCT aid", "title", "language", "title_type"],
                     where_clause="title_normalized LIKE ? AND title_normalized != ?",
                     order_by="title_type ASC, language ASC",
-                    limit=remaining_limit
+                    limit=remaining_limit,
                 )
                 prefix_results = conn.execute(
-                    prefix_query, [f"{query_lower}%", query_lower] + prefix_params
+                    prefix_query, [f"{query_lower}%", query_lower, *prefix_params]
                 ).fetchall()
 
                 # Combine results
@@ -383,16 +386,23 @@ class MultiProviderDatabase:
 
                 # Finally, try substring matches using secure query helper
                 remaining_limit = limit - len(all_results)
-                substring_query, substring_params = SecureQueryHelper.build_select_query(
-                    titles_table,
-                    ["DISTINCT aid", "title", "language", "title_type"],
-                    where_clause="title_normalized LIKE ? AND title_normalized NOT LIKE ? AND title_normalized != ?",
-                    order_by="title_type ASC, language ASC",
-                    limit=remaining_limit
+                substring_query, substring_params = (
+                    SecureQueryHelper.build_select_query(
+                        titles_table,
+                        ["DISTINCT aid", "title", "language", "title_type"],
+                        where_clause="title_normalized LIKE ? AND title_normalized NOT LIKE ? AND title_normalized != ?",
+                        order_by="title_type ASC, language ASC",
+                        limit=remaining_limit,
+                    )
                 )
                 substring_results = conn.execute(
-                    substring_query, 
-                    [f"%{query_lower}%", f"{query_lower}%", query_lower] + substring_params
+                    substring_query,
+                    [
+                        f"%{query_lower}%",
+                        f"{query_lower}%",
+                        query_lower,
+                        *substring_params,
+                    ],
                 ).fetchall()
 
                 return (all_results + substring_results)[:limit]
@@ -431,7 +441,9 @@ class MultiProviderDatabase:
                 )
 
                 # Clear existing data for this provider using secure query helper
-                delete_query, delete_params = SecureQueryHelper.build_delete_query(titles_table)
+                delete_query, delete_params = SecureQueryHelper.build_delete_query(
+                    titles_table
+                )
                 conn.execute(delete_query, delete_params)
 
                 # Prepare data with normalized titles
@@ -445,7 +457,7 @@ class MultiProviderDatabase:
                 # Bulk insert
                 conn.executemany(
                     f"""
-                    INSERT OR IGNORE INTO {titles_table} 
+                    INSERT OR IGNORE INTO {titles_table}
                     (aid, title_type, language, title, title_normalized)
                     VALUES (?, ?, ?, ?, ?)
                 """,
@@ -506,20 +518,28 @@ class MultiProviderDatabase:
                     )
 
                     # Get title counts using secure query helper
-                    count_query, count_params = SecureQueryHelper.build_count_query(titles_table)
+                    count_query, count_params = SecureQueryHelper.build_count_query(
+                        titles_table
+                    )
                     total_titles = conn.execute(count_query, count_params).fetchone()[0]
-                    
+
                     # Get unique anime count using secure query helper
                     unique_query, unique_params = SecureQueryHelper.build_select_query(
                         titles_table, ["COUNT(DISTINCT aid)"]
                     )
-                    unique_anime = conn.execute(unique_query, unique_params).fetchone()[0]
+                    unique_anime = conn.execute(unique_query, unique_params).fetchone()[
+                        0
+                    ]
 
                     # Get last update time using secure query helper
-                    update_query, update_params = SecureQueryHelper.build_metadata_query(
-                        metadata_table, 'last_titles_update'
+                    update_query, update_params = (
+                        SecureQueryHelper.build_metadata_query(
+                            metadata_table, "last_titles_update"
+                        )
                     )
-                    last_update_result = conn.execute(update_query, update_params).fetchone()
+                    last_update_result = conn.execute(
+                        update_query, update_params
+                    ).fetchone()
                     last_update = last_update_result[0] if last_update_result else None
 
                     stats["providers"][provider_name] = {
@@ -575,7 +595,7 @@ class MultiProviderDatabase:
 
                 cursor = conn.execute(
                     """
-                    DELETE FROM search_transactions 
+                    DELETE FROM search_transactions
                     WHERE created_at < ?
                 """,
                     (cutoff_date.isoformat(),),
@@ -610,10 +630,10 @@ class MultiProviderDatabase:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.execute(
                     """
-                    SELECT cache_key, provider_source, method_name, parameters_json, source_data, 
-                           parsed_data_json, created_at, expires_at, access_count, 
+                    SELECT cache_key, provider_source, method_name, parameters_json, source_data,
+                           parsed_data_json, created_at, expires_at, access_count,
                            last_accessed, data_size
-                    FROM persistent_cache 
+                    FROM persistent_cache
                     WHERE cache_key = ?
                 """,
                     (cache_key,),
@@ -651,9 +671,9 @@ class MultiProviderDatabase:
         """
         if data_size is None:
             # Calculate data size
-            data_size = len(parsed_data_json.encode('utf-8'))
+            data_size = len(parsed_data_json.encode("utf-8"))
             if source_data:
-                data_size += len(source_data.encode('utf-8'))
+                data_size += len(source_data.encode("utf-8"))
 
         now = datetime.now()
 
@@ -661,9 +681,9 @@ class MultiProviderDatabase:
             with sqlite3.connect(self.db_path) as conn:
                 conn.execute(
                     """
-                    INSERT OR REPLACE INTO persistent_cache 
-                    (cache_key, provider_source, method_name, parameters_json, source_data, 
-                     parsed_data_json, created_at, expires_at, access_count, 
+                    INSERT OR REPLACE INTO persistent_cache
+                    (cache_key, provider_source, method_name, parameters_json, source_data,
+                     parsed_data_json, created_at, expires_at, access_count,
                      last_accessed, data_size)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
@@ -699,8 +719,8 @@ class MultiProviderDatabase:
             with sqlite3.connect(self.db_path) as conn:
                 conn.execute(
                     """
-                    UPDATE persistent_cache 
-                    SET access_count = access_count + 1, 
+                    UPDATE persistent_cache
+                    SET access_count = access_count + 1,
                         last_accessed = ?
                     WHERE cache_key = ?
                 """,
@@ -709,7 +729,9 @@ class MultiProviderDatabase:
                 conn.commit()
 
         except sqlite3.Error as e:
-            raise DatabaseError(f"Failed to update cache access for {cache_key}: {e}") from e
+            raise DatabaseError(
+                f"Failed to update cache access for {cache_key}: {e}"
+            ) from e
 
     async def delete_cache_entry(self, cache_key: str) -> bool:
         """Delete a specific cache entry.
@@ -749,10 +771,10 @@ class MultiProviderDatabase:
                 cursor = conn.execute("DELETE FROM persistent_cache")
                 conn.commit()
                 deleted_count = cursor.rowcount
-                
+
                 if deleted_count > 0:
                     logger.info(f"Cleared {deleted_count} cache entries from database")
-                
+
                 return deleted_count
 
         except sqlite3.Error as e:
@@ -776,10 +798,10 @@ class MultiProviderDatabase:
                 )
                 conn.commit()
                 expired_count = cursor.rowcount
-                
+
                 if expired_count > 0:
                     logger.info(f"Cleaned up {expired_count} expired cache entries")
-                
+
                 return expired_count
 
         except sqlite3.Error as e:
@@ -815,7 +837,7 @@ class MultiProviderDatabase:
 
                 # Get method breakdown
                 method_stats = conn.execute("""
-                    SELECT method_name, COUNT(*) as count, 
+                    SELECT method_name, COUNT(*) as count,
                            COALESCE(SUM(data_size), 0) as total_size,
                            COALESCE(SUM(access_count), 0) as total_accesses
                     FROM persistent_cache
@@ -824,7 +846,7 @@ class MultiProviderDatabase:
 
                 # Get provider breakdown
                 provider_stats = conn.execute("""
-                    SELECT provider_source, COUNT(*) as count, 
+                    SELECT provider_source, COUNT(*) as count,
                            COALESCE(SUM(data_size), 0) as total_size,
                            COALESCE(SUM(access_count), 0) as total_accesses
                     FROM persistent_cache
@@ -835,6 +857,7 @@ class MultiProviderDatabase:
                 db_file_size = 0
                 try:
                     from pathlib import Path
+
                     db_file_size = Path(self.db_path).stat().st_size
                 except (OSError, FileNotFoundError):
                     pass
@@ -870,10 +893,8 @@ class MultiProviderDatabase:
         """Close database connections and cleanup resources."""
         async with self._lock:
             for conn in self._connection_pool.values():
-                try:
+                with contextlib.suppress(sqlite3.Error):
                     conn.close()
-                except sqlite3.Error:
-                    pass  # Ignore errors during cleanup
 
             self._connection_pool.clear()
             logger.debug("Database connections closed")

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .logging_config import get_logger
 from .models import AnimeDetails, AnimeSearchResult
@@ -20,11 +20,11 @@ logger = get_logger(__name__)
 @dataclass
 class PersistentCacheEntry:
     """Represents a cache entry in the database.
-    
+
     This class encapsulates all the metadata and data for a single cache entry,
     including both the raw XML content and parsed results for debugging and
     potential re-parsing scenarios.
-    
+
     Attributes:
         cache_key: Unique identifier for the cache entry
         provider_source: Source provider name (e.g., "anidb", "anilist")
@@ -38,7 +38,7 @@ class PersistentCacheEntry:
         last_accessed: Timestamp of the most recent access
         data_size: Size of the cached data in bytes
     """
-    
+
     cache_key: str
     provider_source: str
     method_name: str
@@ -53,7 +53,7 @@ class PersistentCacheEntry:
 
     def is_expired(self) -> bool:
         """Check if the cache entry has expired.
-        
+
         Returns:
             True if the entry has expired, False otherwise
         """
@@ -61,7 +61,7 @@ class PersistentCacheEntry:
 
     def time_to_expiry(self) -> timedelta:
         """Get the time remaining until expiry.
-        
+
         Returns:
             Timedelta until expiry (negative if already expired)
         """
@@ -69,7 +69,7 @@ class PersistentCacheEntry:
 
     def age(self) -> timedelta:
         """Get the age of the cache entry.
-        
+
         Returns:
             Timedelta since creation
         """
@@ -83,10 +83,10 @@ class PersistentCacheEntry:
     @classmethod
     def from_db_row(cls, row: tuple) -> "PersistentCacheEntry":
         """Create a PersistentCacheEntry from a database row.
-        
+
         Args:
             row: Database row tuple with cache entry data
-            
+
         Returns:
             PersistentCacheEntry instance
         """
@@ -120,7 +120,7 @@ class PersistentCacheEntry:
 
     def to_db_tuple(self) -> tuple:
         """Convert the cache entry to a database tuple for insertion.
-        
+
         Returns:
             Tuple suitable for database insertion
         """
@@ -141,10 +141,10 @@ class PersistentCacheEntry:
 
 class PersistentCacheStats(BaseModel):
     """Statistics about persistent cache performance and usage.
-    
+
     This class provides comprehensive metrics for monitoring cache effectiveness,
     including separate statistics for memory and database cache layers.
-    
+
     Attributes:
         memory_hits: Number of cache hits from memory cache
         memory_misses: Number of cache misses from memory cache
@@ -161,36 +161,36 @@ class PersistentCacheStats(BaseModel):
         memory_size_estimate: Estimated size of memory cache in bytes
         db_available: Whether database cache is available and functioning
     """
-    
+
     # Memory cache statistics
     memory_hits: int = 0
     memory_misses: int = 0
     memory_entries: int = 0
-    
+
     # Database cache statistics
     db_hits: int = 0
     db_misses: int = 0
     db_entries: int = 0
-    
+
     # Combined statistics
     total_hits: int = 0
     total_misses: int = 0
-    
+
     # Performance metrics
     avg_memory_access_time: float = 0.0  # milliseconds
     avg_db_access_time: float = 0.0  # milliseconds
-    
+
     # Storage metrics
     db_size_bytes: int = 0
     memory_size_estimate: int = 0
-    
+
     # Status indicators
     db_available: bool = True
 
     @property
     def hit_rate(self) -> float:
         """Calculate overall cache hit rate as a percentage.
-        
+
         Returns:
             Hit rate percentage (0.0 to 100.0)
         """
@@ -202,7 +202,7 @@ class PersistentCacheStats(BaseModel):
     @property
     def memory_hit_rate(self) -> float:
         """Calculate memory cache hit rate as a percentage.
-        
+
         Returns:
             Memory cache hit rate percentage (0.0 to 100.0)
         """
@@ -214,7 +214,7 @@ class PersistentCacheStats(BaseModel):
     @property
     def db_hit_rate(self) -> float:
         """Calculate database cache hit rate as a percentage.
-        
+
         Returns:
             Database cache hit rate percentage (0.0 to 100.0)
         """
@@ -226,7 +226,7 @@ class PersistentCacheStats(BaseModel):
 
 class CacheSerializer:
     """Utility class for serializing and deserializing cache data.
-    
+
     This class handles the conversion between Python objects and JSON strings
     for storage in the database, with special handling for anime-specific data types.
     """
@@ -234,13 +234,13 @@ class CacheSerializer:
     @staticmethod
     def serialize_anime_details(details: AnimeDetails) -> str:
         """Serialize AnimeDetails object to JSON string.
-        
+
         Args:
             details: AnimeDetails object to serialize
-            
+
         Returns:
             JSON string representation of the anime details
-            
+
         Raises:
             ValueError: If serialization fails
         """
@@ -253,13 +253,13 @@ class CacheSerializer:
     @staticmethod
     def deserialize_anime_details(json_str: str) -> AnimeDetails:
         """Deserialize JSON string to AnimeDetails object.
-        
+
         Args:
             json_str: JSON string to deserialize
-            
+
         Returns:
             AnimeDetails object
-            
+
         Raises:
             ValueError: If deserialization fails
         """
@@ -272,20 +272,20 @@ class CacheSerializer:
     @staticmethod
     def serialize_search_results(results: list[AnimeSearchResult]) -> str:
         """Serialize list of AnimeSearchResult objects to JSON string.
-        
+
         Args:
             results: List of AnimeSearchResult objects to serialize
-            
+
         Returns:
             JSON string representation of the search results
-            
+
         Raises:
             ValueError: If serialization fails
         """
         try:
             # Convert to list of dictionaries and then to JSON
             results_data = [result.model_dump() for result in results]
-            return json.dumps(results_data, ensure_ascii=False, separators=(',', ':'))
+            return json.dumps(results_data, ensure_ascii=False, separators=(",", ":"))
         except Exception as e:
             logger.error(f"Failed to serialize search results: {e}")
             raise ValueError(f"Failed to serialize search results: {e}") from e
@@ -293,13 +293,13 @@ class CacheSerializer:
     @staticmethod
     def deserialize_search_results(json_str: str) -> list[AnimeSearchResult]:
         """Deserialize JSON string to list of AnimeSearchResult objects.
-        
+
         Args:
             json_str: JSON string to deserialize
-            
+
         Returns:
             List of AnimeSearchResult objects
-            
+
         Raises:
             ValueError: If deserialization fails
         """
@@ -313,18 +313,18 @@ class CacheSerializer:
     @staticmethod
     def serialize_parameters(params: dict[str, Any]) -> str:
         """Serialize parameters dictionary to JSON string.
-        
+
         Args:
             params: Parameters dictionary to serialize
-            
+
         Returns:
             JSON string representation of the parameters
-            
+
         Raises:
             ValueError: If serialization fails
         """
         try:
-            return json.dumps(params, sort_keys=True, separators=(',', ':'))
+            return json.dumps(params, sort_keys=True, separators=(",", ":"))
         except Exception as e:
             logger.error(f"Failed to serialize parameters: {e}")
             raise ValueError(f"Failed to serialize parameters: {e}") from e
@@ -332,13 +332,13 @@ class CacheSerializer:
     @staticmethod
     def deserialize_parameters(json_str: str) -> dict[str, Any]:
         """Deserialize JSON string to parameters dictionary.
-        
+
         Args:
             json_str: JSON string to deserialize
-            
+
         Returns:
             Parameters dictionary
-            
+
         Raises:
             ValueError: If deserialization fails
         """
@@ -353,15 +353,15 @@ class CacheSerializer:
         parsed_data_json: str, source_data: str | None = None
     ) -> int:
         """Calculate the total size of cached data in bytes.
-        
+
         Args:
             parsed_data_json: JSON string of parsed data
             source_data: Optional raw source data (XML, JSON, etc.)
-            
+
         Returns:
             Total size in bytes
         """
-        size = len(parsed_data_json.encode('utf-8'))
+        size = len(parsed_data_json.encode("utf-8"))
         if source_data:
-            size += len(source_data.encode('utf-8'))
+            size += len(source_data.encode("utf-8"))
         return size

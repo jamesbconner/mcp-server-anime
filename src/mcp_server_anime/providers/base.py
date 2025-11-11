@@ -9,7 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from ..core.models import AnimeDetails, AnimeSearchResult
+from mcp_server_anime.core.models import AnimeDetails, AnimeSearchResult
 
 
 class ProviderCapabilities(BaseModel):

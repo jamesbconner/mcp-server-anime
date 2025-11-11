@@ -10,12 +10,12 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from mcp.server.fastmcp import FastMCP
 
+from src.mcp_server_anime.core.exceptions import APIError
 from src.mcp_server_anime.core.models import (
     AnimeCreator,
     AnimeDetails,
     AnimeSearchResult,
     AnimeTitle,
-    APIError,
     RelatedAnime,
 )
 from src.mcp_server_anime.tools import (
@@ -79,11 +79,11 @@ class TestAnimeSearchTool:
 
             # Get the registered tool function
             tools = mcp_server._tool_manager._tools
-            assert "anime_search" in tools
-            anime_search_func = tools["anime_search"].fn
+            assert "anidb_search" in tools
+            anidb_search_func = tools["anidb_search"].fn
 
             # Call the tool
-            result = await anime_search_func(query="evangelion", limit=10)
+            result = await anidb_search_func(query="evangelion", limit=10)
 
             # Verify result format
             assert isinstance(result, list)
@@ -112,39 +112,39 @@ class TestAnimeSearchTool:
     async def test_anime_search_empty_query(self, mcp_server: FastMCP) -> None:
         """Test anime search with empty query raises ValueError."""
         tools = mcp_server._tool_manager._tools
-        anime_search_func = tools["anime_search"].fn
+        anidb_search_func = tools["anidb_search"].fn
 
         with pytest.raises(ValueError, match="Search query cannot be empty"):
-            await anime_search_func(query="", limit=10)
+            await anidb_search_func(query="", limit=10)
 
     @pytest.mark.asyncio
     async def test_anime_search_whitespace_query(self, mcp_server: FastMCP) -> None:
         """Test anime search with whitespace-only query raises ValueError."""
         tools = mcp_server._tool_manager._tools
-        anime_search_func = tools["anime_search"].fn
+        anidb_search_func = tools["anidb_search"].fn
 
         with pytest.raises(ValueError, match="Search query cannot be empty"):
-            await anime_search_func(query="   ", limit=10)
+            await anidb_search_func(query="   ", limit=10)
 
     @pytest.mark.asyncio
     async def test_anime_search_short_query(self, mcp_server: FastMCP) -> None:
         """Test anime search with too short query raises ValueError."""
         tools = mcp_server._tool_manager._tools
-        anime_search_func = tools["anime_search"].fn
+        anidb_search_func = tools["anidb_search"].fn
 
         with pytest.raises(
             ValueError, match="Search query must be at least 2 characters long"
         ):
-            await anime_search_func(query="a", limit=10)
+            await anidb_search_func(query="a", limit=10)
 
     @pytest.mark.asyncio
     async def test_anime_search_invalid_limit_zero(self, mcp_server: FastMCP) -> None:
         """Test anime search with zero limit raises ValueError."""
         tools = mcp_server._tool_manager._tools
-        anime_search_func = tools["anime_search"].fn
+        anidb_search_func = tools["anidb_search"].fn
 
         with pytest.raises(ValueError, match="Limit must be at least 1"):
-            await anime_search_func(query="evangelion", limit=0)
+            await anidb_search_func(query="evangelion", limit=0)
 
     @pytest.mark.asyncio
     async def test_anime_search_invalid_limit_negative(
@@ -152,135 +152,108 @@ class TestAnimeSearchTool:
     ) -> None:
         """Test anime search with negative limit raises ValueError."""
         tools = mcp_server._tool_manager._tools
-        anime_search_func = tools["anime_search"].fn
+        anidb_search_func = tools["anidb_search"].fn
 
         with pytest.raises(ValueError, match="Limit must be at least 1"):
-            await anime_search_func(query="evangelion", limit=-5)
+            await anidb_search_func(query="evangelion", limit=-5)
 
     @pytest.mark.asyncio
     async def test_anime_search_limit_too_high(self, mcp_server: FastMCP) -> None:
         """Test anime search with limit exceeding maximum raises ValueError."""
         tools = mcp_server._tool_manager._tools
-        anime_search_func = tools["anime_search"].fn
+        anidb_search_func = tools["anidb_search"].fn
 
         with pytest.raises(
             ValueError, match="Limit cannot exceed 20 for MCP tool usage"
         ):
-            await anime_search_func(query="evangelion", limit=25)
+            await anidb_search_func(query="evangelion", limit=25)
 
     @pytest.mark.asyncio
     async def test_anime_search_api_validation_error(self, mcp_server: FastMCP) -> None:
-        """Test anime search with API validation error converts to ValueError."""
-        with (
-            patch("src.mcp_server_anime.tools.load_config") as mock_load_config,
-            patch(
-                "src.mcp_server_anime.tools.create_anidb_service"
-            ) as mock_create_service,
-        ):
+        """Test anime search with API validation error converts to RuntimeError."""
+        with patch("src.mcp_server_anime.tools.get_search_service") as mock_get_search:
             # Setup mocks
-            mock_config = Mock()
-            mock_load_config.return_value = mock_config
-
             api_error = APIError(
                 code="INVALID_QUERY",
                 message="Query validation failed",
                 details="Query too short",
             )
-            mock_service = setup_service_mock(side_effect=api_error)
-            mock_create_service.return_value = mock_service
+            mock_search_service = AsyncMock()
+            mock_search_service.search_anime.side_effect = api_error
+            mock_get_search.return_value = mock_search_service
 
             tools = mcp_server._tool_manager._tools
-            anime_search_func = tools["anime_search"].fn
+            anidb_search_func = tools["anidb_search"].fn
 
-            # The error handling logic converts APIError to RuntimeError, not ValueError
-            # because it's not a DataValidationError
+            # The error handling logic converts APIError to RuntimeError
             with pytest.raises(
                 RuntimeError,
-                match=r"Anime search failed: INVALID_QUERY: Query validation failed \| Details: Query too short",
+                match=r"AniDB search failed:.*INVALID_QUERY",
             ):
-                await anime_search_func(query="evangelion", limit=10)
+                await anidb_search_func(query="evangelion", limit=10)
 
     @pytest.mark.asyncio
     async def test_anime_search_api_runtime_error(self, mcp_server: FastMCP) -> None:
         """Test anime search with API runtime error converts to RuntimeError."""
-        with (
-            patch("src.mcp_server_anime.tools.load_config") as mock_load_config,
-            patch(
-                "src.mcp_server_anime.tools.create_anidb_service"
-            ) as mock_create_service,
-        ):
+        with patch("src.mcp_server_anime.tools.get_search_service") as mock_get_search:
             # Setup mocks
-            mock_config = Mock()
-            mock_load_config.return_value = mock_config
-
             api_error = APIError(
                 code="API_ERROR",
                 message="API request failed",
                 details="Network timeout",
             )
-            mock_service = setup_service_mock(side_effect=api_error)
-            mock_create_service.return_value = mock_service
+            mock_search_service = AsyncMock()
+            mock_search_service.search_anime.side_effect = api_error
+            mock_get_search.return_value = mock_search_service
 
             tools = mcp_server._tool_manager._tools
-            anime_search_func = tools["anime_search"].fn
+            anidb_search_func = tools["anidb_search"].fn
 
             with pytest.raises(
                 RuntimeError,
-                match=r"Anime search failed: API_ERROR: API request failed \| Details: Network timeout",
+                match=r"AniDB search failed:.*API_ERROR",
             ):
-                await anime_search_func(query="evangelion", limit=10)
+                await anidb_search_func(query="evangelion", limit=10)
 
     @pytest.mark.asyncio
     async def test_anime_search_unexpected_error(self, mcp_server: FastMCP) -> None:
         """Test anime search with unexpected error converts to RuntimeError."""
-        with (
-            patch("src.mcp_server_anime.tools.load_config") as mock_load_config,
-            patch(
-                "src.mcp_server_anime.tools.create_anidb_service"
-            ) as mock_create_service,
-        ):
+        with patch("src.mcp_server_anime.tools.get_search_service") as mock_get_search:
             # Setup mocks
-            mock_config = Mock()
-            mock_load_config.return_value = mock_config
-
-            mock_service = setup_service_mock(side_effect=Exception("Unexpected error"))
-            mock_create_service.return_value = mock_service
+            unexpected_error = ValueError("Unexpected error")
+            mock_search_service = AsyncMock()
+            mock_search_service.search_anime.side_effect = unexpected_error
+            mock_get_search.return_value = mock_search_service
 
             tools = mcp_server._tool_manager._tools
-            anime_search_func = tools["anime_search"].fn
+            anidb_search_func = tools["anidb_search"].fn
 
             with pytest.raises(
-                RuntimeError, match="Anime search failed: Unexpected error"
+                RuntimeError, match=r"AniDB search failed: Unexpected error"
             ):
-                await anime_search_func(query="evangelion", limit=10)
+                await anidb_search_func(query="evangelion", limit=10)
 
     @pytest.mark.asyncio
     async def test_anime_search_default_limit(
         self, mcp_server: FastMCP, sample_search_results: list[AnimeSearchResult]
     ) -> None:
         """Test anime search uses default limit when not specified."""
-        with (
-            patch("src.mcp_server_anime.tools.load_config") as mock_load_config,
-            patch(
-                "src.mcp_server_anime.tools.create_anidb_service"
-            ) as mock_create_service,
-        ):
+        with patch("src.mcp_server_anime.tools.get_search_service") as mock_get_search:
             # Setup mocks
-            mock_config = Mock()
-            mock_load_config.return_value = mock_config
-
-            mock_service = AsyncMock()
-            mock_service.search_anime.return_value = sample_search_results
-            mock_create_service.return_value = mock_service
+            mock_search_service = AsyncMock()
+            mock_search_service.search_anime.return_value = sample_search_results
+            mock_get_search.return_value = mock_search_service
 
             tools = mcp_server._tool_manager._tools
-            anime_search_func = tools["anime_search"].fn
+            anidb_search_func = tools["anidb_search"].fn
 
             # Call without limit parameter
-            result = await anime_search_func(query="evangelion")
+            result = await anidb_search_func(query="evangelion")
 
             # Verify default limit was used
-            mock_service.search_anime.assert_called_once_with("evangelion", 10)
+            mock_search_service.search_anime.assert_called_once_with(
+                "evangelion", 10, client_id="mcp_tool"
+            )
             assert len(result) == 2
 
     @pytest.mark.asyncio
@@ -288,28 +261,22 @@ class TestAnimeSearchTool:
         self, mcp_server: FastMCP, sample_search_results: list[AnimeSearchResult]
     ) -> None:
         """Test anime search strips whitespace from query."""
-        with (
-            patch("src.mcp_server_anime.tools.load_config") as mock_load_config,
-            patch(
-                "src.mcp_server_anime.tools.create_anidb_service"
-            ) as mock_create_service,
-        ):
+        with patch("src.mcp_server_anime.tools.get_search_service") as mock_get_search:
             # Setup mocks
-            mock_config = Mock()
-            mock_load_config.return_value = mock_config
-
-            mock_service = AsyncMock()
-            mock_service.search_anime.return_value = sample_search_results
-            mock_create_service.return_value = mock_service
+            mock_search_service = AsyncMock()
+            mock_search_service.search_anime.return_value = sample_search_results
+            mock_get_search.return_value = mock_search_service
 
             tools = mcp_server._tool_manager._tools
-            anime_search_func = tools["anime_search"].fn
+            anidb_search_func = tools["anidb_search"].fn
 
             # Call with whitespace-padded query
-            result = await anime_search_func(query="  evangelion  ", limit=5)
+            result = await anidb_search_func(query="  evangelion  ", limit=5)
 
             # Verify whitespace was stripped
-            mock_service.search_anime.assert_called_once_with("evangelion", 5)
+            mock_search_service.search_anime.assert_called_once_with(
+                "evangelion", 5, client_id="mcp_tool"
+            )
             assert len(result) == 2
 
 
@@ -461,11 +428,11 @@ class TestAnimeDetailsTool:
 
             # Get the registered tool function
             tools = mcp_server._tool_manager._tools
-            assert "anime_details" in tools
-            anime_details_func = tools["anime_details"].fn
+            assert "anidb_details" in tools
+            anidb_details_func = tools["anidb_details"].fn
 
             # Call the tool
-            result = await anime_details_func(aid=30)
+            result = await anidb_details_func(aid=30)
 
             # Verify result format
             assert isinstance(result, dict)
@@ -566,10 +533,10 @@ class TestAnimeDetailsTool:
             mock_create_service.return_value = mock_service
 
             tools = mcp_server._tool_manager._tools
-            anime_details_func = tools["anime_details"].fn
+            anidb_details_func = tools["anidb_details"].fn
 
             # Call the tool
-            result = await anime_details_func(aid=123)
+            result = await anidb_details_func(aid=123)
 
             # Verify minimal result format
             assert result["aid"] == 123
@@ -589,21 +556,21 @@ class TestAnimeDetailsTool:
     async def test_anime_details_invalid_aid_type(self, mcp_server: FastMCP) -> None:
         """Test anime details with non-integer AID raises ValueError."""
         tools = mcp_server._tool_manager._tools
-        anime_details_func = tools["anime_details"].fn
+        anidb_details_func = tools["anidb_details"].fn
 
         with pytest.raises(ValueError, match="Anime ID must be an integer, got str"):
-            await anime_details_func(aid="30")
+            await anidb_details_func(aid="30")
 
     @pytest.mark.asyncio
     async def test_anime_details_invalid_aid_zero(self, mcp_server: FastMCP) -> None:
         """Test anime details with zero AID raises ValueError."""
         tools = mcp_server._tool_manager._tools
-        anime_details_func = tools["anime_details"].fn
+        anidb_details_func = tools["anidb_details"].fn
 
         with pytest.raises(
             ValueError, match="Anime ID must be a positive integer, got 0"
         ):
-            await anime_details_func(aid=0)
+            await anidb_details_func(aid=0)
 
     @pytest.mark.asyncio
     async def test_anime_details_invalid_aid_negative(
@@ -611,24 +578,24 @@ class TestAnimeDetailsTool:
     ) -> None:
         """Test anime details with negative AID raises ValueError."""
         tools = mcp_server._tool_manager._tools
-        anime_details_func = tools["anime_details"].fn
+        anidb_details_func = tools["anidb_details"].fn
 
         with pytest.raises(
             ValueError, match="Anime ID must be a positive integer, got -5"
         ):
-            await anime_details_func(aid=-5)
+            await anidb_details_func(aid=-5)
 
     @pytest.mark.asyncio
     async def test_anime_details_aid_out_of_range(self, mcp_server: FastMCP) -> None:
         """Test anime details with AID out of valid range raises ValueError."""
         tools = mcp_server._tool_manager._tools
-        anime_details_func = tools["anime_details"].fn
+        anidb_details_func = tools["anidb_details"].fn
 
         with pytest.raises(
             ValueError,
             match="Anime ID appears to be out of valid range \\(1-999999\\), got 1000000",
         ):
-            await anime_details_func(aid=1000000)
+            await anidb_details_func(aid=1000000)
 
     @pytest.mark.asyncio
     async def test_anime_details_not_found(self, mcp_server: FastMCP) -> None:
@@ -655,12 +622,12 @@ class TestAnimeDetailsTool:
             mock_create_service.return_value = mock_service
 
             tools = mcp_server._tool_manager._tools
-            anime_details_func = tools["anime_details"].fn
+            anidb_details_func = tools["anidb_details"].fn
 
             with pytest.raises(
                 RuntimeError, match="Anime not found: Anime with ID 99999 not found"
             ):
-                await anime_details_func(aid=99999)
+                await anidb_details_func(aid=99999)
 
     @pytest.mark.asyncio
     async def test_anime_details_api_validation_error(
@@ -689,15 +656,15 @@ class TestAnimeDetailsTool:
             mock_create_service.return_value = mock_service
 
             tools = mcp_server._tool_manager._tools
-            anime_details_func = tools["anime_details"].fn
+            anidb_details_func = tools["anidb_details"].fn
 
             # The error handling logic converts APIError to RuntimeError, not ValueError
             # because it's not a DataValidationError
             with pytest.raises(
                 RuntimeError,
-                match=r"Anime details fetch failed: INVALID_AID_VALUE: Anime ID must be a positive integer \| Details: Provided aid: -1",
+                match=r"AniDB details fetch failed:.*INVALID_AID_VALUE",
             ):
-                await anime_details_func(aid=30)
+                await anidb_details_func(aid=30)
 
     @pytest.mark.asyncio
     async def test_anime_details_client_banned_error(self, mcp_server: FastMCP) -> None:
@@ -724,13 +691,13 @@ class TestAnimeDetailsTool:
             mock_create_service.return_value = mock_service
 
             tools = mcp_server._tool_manager._tools
-            anime_details_func = tools["anime_details"].fn
+            anidb_details_func = tools["anidb_details"].fn
 
             with pytest.raises(
                 RuntimeError,
-                match="Anime details fetch failed: CLIENT_BANNED: Client is banned from API",
+                match=r"AniDB details fetch failed:.*CLIENT_BANNED",
             ):
-                await anime_details_func(aid=30)
+                await anidb_details_func(aid=30)
 
     @pytest.mark.asyncio
     async def test_anime_details_api_runtime_error(self, mcp_server: FastMCP) -> None:
@@ -757,13 +724,13 @@ class TestAnimeDetailsTool:
             mock_create_service.return_value = mock_service
 
             tools = mcp_server._tool_manager._tools
-            anime_details_func = tools["anime_details"].fn
+            anidb_details_func = tools["anidb_details"].fn
 
             with pytest.raises(
                 RuntimeError,
-                match="Anime details fetch failed: API_ERROR: API request failed",
+                match=r"AniDB details fetch failed:.*API_ERROR",
             ):
-                await anime_details_func(aid=30)
+                await anidb_details_func(aid=30)
 
     @pytest.mark.asyncio
     async def test_anime_details_unexpected_error(self, mcp_server: FastMCP) -> None:
@@ -785,12 +752,12 @@ class TestAnimeDetailsTool:
             mock_create_service.return_value = mock_service
 
             tools = mcp_server._tool_manager._tools
-            anime_details_func = tools["anime_details"].fn
+            anidb_details_func = tools["anidb_details"].fn
 
             with pytest.raises(
-                RuntimeError, match="Anime details fetch failed: Unexpected error"
+                RuntimeError, match=r"AniDB details fetch failed: Unexpected error"
             ):
-                await anime_details_func(aid=30)
+                await anidb_details_func(aid=30)
 
 
 class TestFormatAnimeDetails:
@@ -921,19 +888,19 @@ class TestRegisterAnimeTools:
         register_anime_tools(mcp)
 
         # Verify anime_search tool is registered
-        assert "anime_search" in mcp._tool_manager._tools
+        assert "anidb_search" in mcp._tool_manager._tools
 
         # Verify anime_details tool is registered
-        assert "anime_details" in mcp._tool_manager._tools
+        assert "anidb_details" in mcp._tool_manager._tools
 
         # Verify anime_search tool has correct metadata
-        anime_search_tool = mcp._tool_manager._tools["anime_search"]
-        assert anime_search_tool.name == "anime_search"
+        anime_search_tool = mcp._tool_manager._tools["anidb_search"]
+        assert anime_search_tool.name == "anidb_search"
         assert callable(anime_search_tool.fn)
 
         # Verify anime_details tool has correct metadata
-        anime_details_tool = mcp._tool_manager._tools["anime_details"]
-        assert anime_details_tool.name == "anime_details"
+        anime_details_tool = mcp._tool_manager._tools["anidb_details"]
+        assert anime_details_tool.name == "anidb_details"
         assert callable(anime_details_tool.fn)
 
         # Verify tool function signatures

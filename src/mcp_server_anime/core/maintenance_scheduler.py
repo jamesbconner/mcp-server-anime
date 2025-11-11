@@ -6,6 +6,7 @@ database performance and reliability.
 """
 
 import asyncio
+import contextlib
 import os
 import sqlite3
 from datetime import datetime, timedelta
@@ -258,7 +259,7 @@ class MaintenanceScheduler:
 
                 # Get statistics
                 cursor = conn.execute("""
-                    SELECT name FROM sqlite_master 
+                    SELECT name FROM sqlite_master
                     WHERE type='table' AND name NOT LIKE 'sqlite_%'
                 """)
                 tables = [row[0] for row in cursor.fetchall()]
@@ -311,7 +312,7 @@ class MaintenanceScheduler:
 
                     # Count tables
                     cursor = conn.execute("""
-                        SELECT COUNT(*) FROM sqlite_master 
+                        SELECT COUNT(*) FROM sqlite_master
                         WHERE type='table' AND name NOT LIKE 'sqlite_%'
                     """)
                     health_info["table_count"] = cursor.fetchone()[0]
@@ -420,10 +421,8 @@ class MaintenanceScheduler:
 
         if self._scheduler_task:
             self._scheduler_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._scheduler_task
-            except asyncio.CancelledError:
-                pass
 
         logger.info("Maintenance scheduler stopped")
 

@@ -18,7 +18,9 @@ class AnimeEpisode(BaseModel):
     episode_number: int = Field(..., gt=0, description="Episode number")
     title: str | None = Field(None, max_length=500, description="Episode title")
     air_date: datetime | None = Field(None, description="Episode air date")
-    description: str | None = Field(None, max_length=2000, description="Episode description")
+    description: str | None = Field(
+        None, max_length=2000, description="Episode description"
+    )
     length: int | None = Field(None, gt=0, description="Episode duration in minutes")
 
     @field_validator("title")
@@ -48,8 +50,12 @@ class ExternalResource(BaseModel):
     Represents links to external platforms and databases.
     """
 
-    type: str = Field(..., min_length=1, max_length=50, description="Platform identifier")
-    identifier: str | None = Field(None, max_length=100, description="External identifier")
+    type: str = Field(
+        ..., min_length=1, max_length=50, description="Platform identifier"
+    )
+    identifier: str | None = Field(
+        None, max_length=100, description="External identifier"
+    )
     url: str | None = Field(None, max_length=500, description="External URL")
 
     @field_validator("type")
@@ -109,7 +115,9 @@ class VoiceActor(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200, description="Voice actor name")
     id: int | None = Field(None, gt=0, description="Voice actor ID in AniDB")
-    language: str | None = Field(None, max_length=10, description="Voice acting language")
+    language: str | None = Field(
+        None, max_length=10, description="Voice acting language"
+    )
 
     @field_validator("name")
     @classmethod
@@ -138,11 +146,15 @@ class AnimeCharacter(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200, description="Character name")
     id: int | None = Field(None, gt=0, description="Character ID in AniDB")
-    description: str | None = Field(None, max_length=2000, description="Character description")
+    description: str | None = Field(
+        None, max_length=2000, description="Character description"
+    )
     voice_actors: list[VoiceActor] = Field(
         default_factory=list, description="List of voice actors for this character"
     )
-    character_type: str | None = Field(None, max_length=50, description="Character type (Main, Secondary, etc.)")
+    character_type: str | None = Field(
+        None, max_length=50, description="Character type (Main, Secondary, etc.)"
+    )
 
     @field_validator("name")
     @classmethod
@@ -181,11 +193,15 @@ class AnimeTag(BaseModel):
 
     id: int = Field(..., gt=0, description="Tag ID in AniDB")
     name: str = Field(..., min_length=1, max_length=1000, description="Tag name")
-    description: str | None = Field(None, max_length=10000, description="Tag description")
+    description: str | None = Field(
+        None, max_length=10000, description="Tag description"
+    )
     weight: int | None = Field(None, ge=0, le=600, description="Tag weight/relevance")
     spoiler: bool = Field(False, description="Whether tag contains spoilers")
     verified: bool = Field(False, description="Whether tag is verified")
-    parent_id: int | None = Field(None, gt=0, description="Parent tag ID for hierarchies")
+    parent_id: int | None = Field(
+        None, gt=0, description="Parent tag ID for hierarchies"
+    )
 
     @field_validator("name")
     @classmethod
@@ -212,9 +228,15 @@ class AnimeRecommendation(BaseModel):
     Represents community recommendations and reviews for anime.
     """
 
-    type: str = Field(..., min_length=1, max_length=50, description="Recommendation type")
-    text: str = Field(..., min_length=1, max_length=2000, description="Recommendation text")
-    user_id: int | None = Field(None, gt=0, description="User ID who made the recommendation")
+    type: str = Field(
+        ..., min_length=1, max_length=50, description="Recommendation type"
+    )
+    text: str = Field(
+        ..., min_length=1, max_length=2000, description="Recommendation text"
+    )
+    user_id: int | None = Field(
+        None, gt=0, description="User ID who made the recommendation"
+    )
 
     @field_validator("type")
     @classmethod
@@ -347,8 +369,12 @@ class AnimeRatings(BaseModel):
     permanent: float | None = Field(None, ge=0, le=10, description="Permanent rating")
     temporary: float | None = Field(None, ge=0, le=10, description="Temporary rating")
     review: float | None = Field(None, ge=0, le=10, description="Review rating")
-    permanent_count: int | None = Field(None, ge=0, description="Number of permanent votes")
-    temporary_count: int | None = Field(None, ge=0, description="Number of temporary votes")
+    permanent_count: int | None = Field(
+        None, ge=0, description="Number of permanent votes"
+    )
+    temporary_count: int | None = Field(
+        None, ge=0, description="Number of temporary votes"
+    )
     review_count: int | None = Field(None, ge=0, description="Number of review votes")
 
 
@@ -407,12 +433,14 @@ class AnimeDetails(BaseModel):
         default_factory=list, description="List of similar anime"
     )
     picture: str | None = Field(None, description="Picture filename")
-    
+
     # New enhanced fields
     episodes: list[AnimeEpisode] = Field(
         default_factory=list, description="List of episode information"
     )
-    resources: AnimeResources | None = Field(None, description="External resource links")
+    resources: AnimeResources | None = Field(
+        None, description="External resource links"
+    )
     characters: list[AnimeCharacter] = Field(
         default_factory=list, description="List of anime characters"
     )
@@ -453,4 +481,3 @@ class AnimeDetails(BaseModel):
 
 
 # Import APIError from exceptions module for backward compatibility
-from .exceptions import APIError

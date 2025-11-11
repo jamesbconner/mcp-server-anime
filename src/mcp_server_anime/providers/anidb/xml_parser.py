@@ -5,14 +5,15 @@ and transforming them into structured Pydantic models. It handles both anime sea
 results and detailed anime information with comprehensive error handling.
 """
 
+import contextlib
 from datetime import datetime
 
 from lxml import etree
 from pydantic import ValidationError
 
-from ...core.exceptions import XMLParsingError
-from ...core.logging_config import get_logger
-from ...core.models import (
+from mcp_server_anime.core.exceptions import XMLParsingError
+from mcp_server_anime.core.logging_config import get_logger
+from mcp_server_anime.core.models import (
     AnimeCharacter,
     AnimeCreator,
     AnimeDetails,
@@ -199,10 +200,8 @@ def parse_anime_search_results(xml_content: str) -> list[AnimeSearchResult]:
             year_str = anime_elem.get("year")
             year: int | None = None
             if year_str:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     year = int(year_str)
-                except (ValueError, TypeError):
-                    pass
             else:
                 year_elem = anime_elem.find("year")
                 year = _safe_get_int(year_elem) if year_elem is not None else None
@@ -273,7 +272,9 @@ def parse_anime_details(xml_content: str) -> AnimeDetails:
         raise XMLParsingError("No anime element found in XML")
 
     # Extract required fields
-    aid_str = anime_elem.get("aid") or anime_elem.get("id")  # AniDB uses 'id' attribute in HTTP API
+    aid_str = anime_elem.get("aid") or anime_elem.get(
+        "id"
+    )  # AniDB uses 'id' attribute in HTTP API
     if not aid_str:
         raise XMLParsingError("Anime element missing required 'aid' or 'id' attribute")
 
@@ -380,8 +381,10 @@ def parse_anime_details(xml_content: str) -> AnimeDetails:
         resources = _parse_resources(anime_elem)
         if resources:
             total_resources = (
-                len(resources.myanimelist) + len(resources.imdb) + 
-                len(resources.official_sites) + len(resources.other)
+                len(resources.myanimelist)
+                + len(resources.imdb)
+                + len(resources.official_sites)
+                + len(resources.other)
             )
             logger.debug(f"Parsed {total_resources} resources for anime {aid}")
     except Exception as e:
@@ -463,7 +466,9 @@ def _parse_titles(anime_elem: etree._Element) -> list[AnimeTitle]:
             # Extract attributes
             title_type = title_elem.get("type", "unknown")
             # Try both xml:lang and lang attributes
-            language = title_elem.get("{http://www.w3.org/XML/1998/namespace}lang") or title_elem.get("lang", "unknown")
+            language = title_elem.get(
+                "{http://www.w3.org/XML/1998/namespace}lang"
+            ) or title_elem.get("lang", "unknown")
 
             # Normalize title type
             if title_type.lower() in ("main", "primary"):
@@ -677,16 +682,12 @@ def _parse_ratings(anime_elem: etree._Element) -> AnimeRatings | None:
         if permanent_elem is not None:
             permanent_text = _safe_get_text(permanent_elem)
             if permanent_text:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     permanent = float(permanent_text)
-                except (ValueError, TypeError):
-                    pass
             permanent_count_str = permanent_elem.get("count")
             if permanent_count_str:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     permanent_count = int(permanent_count_str)
-                except (ValueError, TypeError):
-                    pass
 
         # Extract temporary rating
         temporary_elem = ratings_container.find("temporary")
@@ -695,16 +696,12 @@ def _parse_ratings(anime_elem: etree._Element) -> AnimeRatings | None:
         if temporary_elem is not None:
             temporary_text = _safe_get_text(temporary_elem)
             if temporary_text:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     temporary = float(temporary_text)
-                except (ValueError, TypeError):
-                    pass
             temporary_count_str = temporary_elem.get("count")
             if temporary_count_str:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     temporary_count = int(temporary_count_str)
-                except (ValueError, TypeError):
-                    pass
 
         # Extract review rating
         review_elem = ratings_container.find("review")
@@ -713,16 +710,12 @@ def _parse_ratings(anime_elem: etree._Element) -> AnimeRatings | None:
         if review_elem is not None:
             review_text = _safe_get_text(review_elem)
             if review_text:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     review = float(review_text)
-                except (ValueError, TypeError):
-                    pass
             review_count_str = review_elem.get("count")
             if review_count_str:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     review_count = int(review_count_str)
-                except (ValueError, TypeError):
-                    pass
 
         # Only return ratings if at least one rating is found
         if permanent is not None or temporary is not None or review is not None:
@@ -779,18 +772,14 @@ def _parse_similar_anime(anime_elem: etree._Element) -> list[SimilarAnime]:
             approval_str = anime_elem.get("approval")
             approval = None
             if approval_str:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     approval = int(approval_str)
-                except (ValueError, TypeError):
-                    pass
 
             total_str = anime_elem.get("total")
             total = None
             if total_str:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     total = int(total_str)
-                except (ValueError, TypeError):
-                    pass
 
             similar_obj = SimilarAnime(
                 aid=aid,
@@ -955,7 +944,7 @@ def _parse_resources(anime_elem: etree._Element) -> AnimeResources | None:
 
             # Map resource type to platform and create resource object
             platform_name = _map_resource_type_to_platform(resource_type_id)
-            
+
             resource_obj = ExternalResource(
                 type=platform_name,
                 identifier=identifier,
@@ -1010,7 +999,7 @@ def _map_resource_type_to_platform(resource_type_id: int) -> str:
         43: "IMDB",
         44: "The Movie Database",
     }
-    
+
     return resource_type_mapping.get(resource_type_id, f"Unknown ({resource_type_id})")
 
 
@@ -1038,10 +1027,8 @@ def _parse_characters(anime_elem: etree._Element) -> list[AnimeCharacter]:
             char_id_str = char_elem.get("id")
             char_id = None
             if char_id_str:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     char_id = int(char_id_str)
-                except (ValueError, TypeError):
-                    pass
 
             # Extract character name (required)
             name_elem = char_elem.find("name")
@@ -1064,7 +1051,9 @@ def _parse_characters(anime_elem: etree._Element) -> list[AnimeCharacter]:
             type_elem = char_elem.find("charactertype")
             if type_elem is None:
                 type_elem = char_elem.find("type")
-            character_type = _safe_get_text(type_elem) if type_elem is not None else None
+            character_type = (
+                _safe_get_text(type_elem) if type_elem is not None else None
+            )
             if character_type == "":
                 character_type = None
 
@@ -1118,10 +1107,8 @@ def _parse_voice_actors(char_elem: etree._Element) -> list[VoiceActor]:
             va_id_str = seiyuu_elem.get("id")
             va_id = None
             if va_id_str:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     va_id = int(va_id_str)
-                except (ValueError, TypeError):
-                    pass
 
             # Extract voice actor name (required)
             name = _safe_get_text(seiyuu_elem)
@@ -1212,20 +1199,26 @@ def _parse_tags(anime_elem: etree._Element) -> list[AnimeTag]:
 
             # Extract spoiler flag
             spoiler_str = tag_elem.get("spoiler")
-            spoiler = spoiler_str is not None and spoiler_str.lower() in ("true", "1", "yes")
+            spoiler = spoiler_str is not None and spoiler_str.lower() in (
+                "true",
+                "1",
+                "yes",
+            )
 
             # Extract verified flag
             verified_str = tag_elem.get("verified")
-            verified = verified_str is not None and verified_str.lower() in ("true", "1", "yes")
+            verified = verified_str is not None and verified_str.lower() in (
+                "true",
+                "1",
+                "yes",
+            )
 
             # Extract parent tag ID
             parent_id_str = tag_elem.get("parentid")
             parent_id = None
             if parent_id_str:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     parent_id = int(parent_id_str)
-                except (ValueError, TypeError):
-                    pass
 
             tag_obj = AnimeTag(
                 id=tag_id,
@@ -1301,10 +1294,8 @@ def _parse_recommendations(anime_elem: etree._Element) -> list[AnimeRecommendati
                 user_id_str = rec_elem.get("userid")
             user_id = None
             if user_id_str:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     user_id = int(user_id_str)
-                except (ValueError, TypeError):
-                    pass
 
             recommendation_obj = AnimeRecommendation(
                 type=rec_type,

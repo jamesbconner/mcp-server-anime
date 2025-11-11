@@ -6,6 +6,7 @@ to ensure database integrity across different versions of the application.
 
 import sqlite3
 from datetime import datetime
+from typing import ClassVar
 
 from .exceptions import ConfigurationError, DatabaseError
 from .logging_config import get_logger
@@ -47,7 +48,7 @@ class SchemaManager:
     """Manages database schema versions and migrations."""
 
     # Define all schema versions in order
-    SCHEMA_VERSIONS = [
+    SCHEMA_VERSIONS: ClassVar[list] = [
         SchemaVersion(
             version="1.0",
             description="Initial multi-provider database schema",
@@ -65,11 +66,11 @@ class SchemaManager:
                 )
                 """,
                 """
-                CREATE INDEX IF NOT EXISTS idx_search_transactions_provider 
+                CREATE INDEX IF NOT EXISTS idx_search_transactions_provider
                 ON search_transactions(provider)
                 """,
                 """
-                CREATE INDEX IF NOT EXISTS idx_search_transactions_timestamp 
+                CREATE INDEX IF NOT EXISTS idx_search_transactions_timestamp
                 ON search_transactions(timestamp)
                 """,
                 """
@@ -94,7 +95,7 @@ class SchemaManager:
             description="Add performance indexes and transaction cleanup",
             migration_sql=[
                 """
-                CREATE INDEX IF NOT EXISTS idx_search_transactions_created_at 
+                CREATE INDEX IF NOT EXISTS idx_search_transactions_created_at
                 ON search_transactions(created_at)
                 """,
                 """
@@ -145,7 +146,7 @@ class SchemaManager:
             with sqlite3.connect(self.db_path) as conn:
                 # Check if metadata table exists
                 cursor = conn.execute("""
-                    SELECT name FROM sqlite_master 
+                    SELECT name FROM sqlite_master
                     WHERE type='table' AND name='database_metadata'
                 """)
 

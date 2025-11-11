@@ -7,12 +7,13 @@ of AniDB titles, with automatic updates and fallback mechanisms.
 import asyncio
 from datetime import datetime
 
-from ...core.exceptions import DatabaseError, ServiceError
-from ...core.logging_config import get_logger
-from ...core.security import SecurityLogger
-from ...core.models import AnimeSearchResult
-from ...core.multi_provider_db import get_multi_provider_database
-from ...core.transaction_logger import log_search_transaction
+from mcp_server_anime.core.exceptions import DatabaseError, ServiceError
+from mcp_server_anime.core.logging_config import get_logger
+from mcp_server_anime.core.models import AnimeSearchResult
+from mcp_server_anime.core.multi_provider_db import get_multi_provider_database
+from mcp_server_anime.core.security import SecurityLogger
+from mcp_server_anime.core.transaction_logger import log_search_transaction
+
 from .titles_downloader import TitlesDownloader
 
 logger = get_logger(__name__)
@@ -99,14 +100,16 @@ class AniDBSearchService:
                 except Exception as fallback_error:
                     # Log the fallback database check failure but continue
                     SecurityLogger.log_exception_with_context(
-                        fallback_error, 
+                        fallback_error,
                         {
-                            "operation": "fallback_database_check", 
+                            "operation": "fallback_database_check",
                             "provider": self.provider_name,
-                            "original_error": str(e)
-                        }
+                            "original_error": str(e),
+                        },
                     )
-                    logger.debug(f"Could not check existing database stats: {fallback_error}")
+                    logger.debug(
+                        f"Could not check existing database stats: {fallback_error}"
+                    )
                 return False
 
     async def search_anime(
@@ -149,7 +152,7 @@ class AniDBSearchService:
             # Convert to AnimeSearchResult objects
             seen_aids = set()
 
-            for aid, title, language, title_type in results:
+            for aid, title, _language, _title_type in results:
                 # Avoid duplicates (same anime with different titles)
                 if aid in seen_aids:
                     continue

@@ -125,9 +125,7 @@ def register_anime_tools(mcp: FastMCP) -> None:
 
         except Exception as e:
             # Handle and convert errors for MCP
-            mcp_error = handle_mcp_tool_error(
-                e, "anidb_search", {"query": query, "limit": limit}
-            )
+            handle_mcp_tool_error(e, "anidb_search", {"query": query, "limit": limit})
 
             # Convert to appropriate MCP exceptions
             if isinstance(e, DataValidationError):
@@ -218,7 +216,7 @@ def register_anime_tools(mcp: FastMCP) -> None:
 
         except Exception as e:
             # Handle and convert errors for MCP
-            mcp_error = handle_mcp_tool_error(e, "anidb_details", {"aid": aid})
+            handle_mcp_tool_error(e, "anidb_details", {"aid": aid})
 
             # Convert to appropriate MCP exceptions
             if isinstance(e, DataValidationError):
@@ -227,8 +225,6 @@ def register_anime_tools(mcp: FastMCP) -> None:
                 raise RuntimeError(f"Anime not found: {e.message}") from e
             else:
                 raise RuntimeError(f"AniDB details fetch failed: {e}") from e
-
-
 
 
 def _format_anime_details(details: AnimeDetails) -> dict[str, Any]:
@@ -278,12 +274,14 @@ def _format_anime_details(details: AnimeDetails) -> dict[str, Any]:
     # Format similar anime list
     similar_anime = []
     for similar in details.similar_anime:
-        similar_anime.append({
-            "aid": similar.aid,
-            "title": similar.title,
-            "approval": similar.approval,
-            "total": similar.total,
-        })
+        similar_anime.append(
+            {
+                "aid": similar.aid,
+                "title": similar.title,
+                "approval": similar.approval,
+                "total": similar.total,
+            }
+        )
 
     # Format episodes list
     episodes = []
@@ -346,7 +344,7 @@ def _format_anime_details(details: AnimeDetails) -> dict[str, Any]:
             }
             for va in character.voice_actors
         ]
-        
+
         character_data = {
             "name": character.name,
             "id": character.id,

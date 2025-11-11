@@ -9,10 +9,10 @@ help: ## Show this help message
 
 # Installation
 install: ## Install the package
-	poetry install --no-dev
+	poetry install
 
 install-dev: ## Install the package with development dependencies
-	poetry install
+	poetry install --extras dev
 	poetry run pre-commit install
 
 # Testing
@@ -35,12 +35,10 @@ test-watch: ## Run tests in watch mode
 
 # Coverage
 coverage: ## Run tests with coverage report
-	poetry run pytest \
-		--cov=src/mcp_server_anime \
-		--cov-report=html \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov-fail-under=90
+	poetry run python scripts/test_tools.py coverage
+
+coverage-detailed: ## Run detailed coverage analysis
+	poetry run python scripts/test_tools.py coverage --detailed
 
 coverage-html: ## Generate HTML coverage report and open it
 	poetry run pytest \
@@ -93,8 +91,17 @@ setup-dev: install-dev pre-commit-install ## Set up development environment
 	@echo "Development environment setup complete!"
 	@echo "Run 'make test' to verify everything is working."
 
+setup: ## Run automated development setup
+	poetry run python scripts/dev_tools.py setup
+
+validate-env: ## Validate development environment
+	poetry run python scripts/dev_tools.py validate
+
 # Clean up
 clean: ## Clean up build artifacts and cache
+	poetry run python scripts/dev_tools.py clean
+
+clean-manual: ## Clean up build artifacts manually
 	rm -rf build/
 	rm -rf dist/
 	rm -rf .eggs/
@@ -105,7 +112,7 @@ clean: ## Clean up build artifacts and cache
 	rm -rf .coverage
 	rm -rf htmlcov/
 	rm -rf coverage.xml
-	rm -rf .tox/
+	rm -rf tests.log
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 
@@ -142,13 +149,6 @@ run: ## Run the MCP server
 run-help: ## Show MCP server help
 	poetry run mcp-server-anime --help
 
-# Tox testing
-tox: ## Run tests with tox
-	tox
-
-tox-parallel: ## Run tests with tox in parallel
-	tox -p auto
-
 # Docker (if needed)
 docker-build: ## Build Docker image
 	docker build -t mcp-server-anime .
@@ -166,7 +166,7 @@ profile: ## Profile the application
 # CI/CD helpers
 ci-install: ## Install dependencies for CI
 	pip install poetry
-	poetry install
+	poetry install --extras dev
 
 ci-test: ## Run tests for CI
 	poetry run pytest \

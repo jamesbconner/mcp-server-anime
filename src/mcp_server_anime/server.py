@@ -6,9 +6,8 @@ import argparse
 import asyncio
 import signal
 import sys
-from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from mcp.server.fastmcp import FastMCP
 
@@ -17,6 +16,9 @@ from .core.exceptions import ConfigurationError, ServiceError
 from .core.logging_config import get_logger, setup_logging
 from .providers.anidb.config import load_config
 from .tools import register_anime_tools
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 
 @with_error_handling("create_server", reraise=True)

@@ -214,7 +214,7 @@ class TestProviderToolRegistration:
         provider = MockProvider(name="test", supports_search=True)
 
         # Register tools
-        registered_tools = register_provider_tools(mock_mcp, provider)
+        register_provider_tools(mock_mcp, provider)
 
         # Get the search tool function that was registered
         search_tool_calls = [
@@ -226,7 +226,7 @@ class TestProviderToolRegistration:
 
         # Extract the actual tool function from the decorator call
         tool_decorator_call = search_tool_calls[0]
-        tool_function = tool_decorator_call[1]["name"]  # This should be the tool name
+        tool_decorator_call[1]["name"]  # This should be the tool name
 
         # Since we can't easily extract the function from the mock, let's test the provider directly
         results = await provider.search_anime("test query", 10)
@@ -239,7 +239,7 @@ class TestProviderToolRegistration:
         provider = MockProvider(name="test", supports_details=True)
 
         # Register tools
-        registered_tools = register_provider_tools(mock_mcp, provider)
+        register_provider_tools(mock_mcp, provider)
 
         # Test the provider directly since we can't easily extract the tool function
         details = await provider.get_anime_details(1)
@@ -262,7 +262,6 @@ class TestProviderToolRegistration:
 
         # Get the registered tool function from the mock call
         tool_call = mock_mcp.tool.call_args
-        tool_decorator = tool_call[1] if tool_call[1] else tool_call[0][0]
 
         # The tool function is wrapped by the decorator, but we can test validation
         # by directly testing the validation logic that would be in the tool

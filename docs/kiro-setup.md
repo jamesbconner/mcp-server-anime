@@ -1,25 +1,55 @@
-# Kiro MCP Server Configuration Guide
+# Kiro MCP Setup Guide
 
-This guide explains how to configure and use the mcp-server-anime with Kiro IDE.
+Complete guide for setting up and using the MCP Server Anime with Kiro IDE.
+
+## Table of Contents
+
+- [Quick Setup](#quick-setup)
+- [Prerequisites](#prerequisites)
+- [Installation Methods](#installation-methods)
+- [Configuration](#configuration)
+- [Local Development Setup](#local-development-setup)
+- [Usage in Kiro](#usage-in-kiro)
+- [Troubleshooting](#troubleshooting)
+- [Best Practices](#best-practices)
+- [Integration Examples](#integration-examples)
+
+## Quick Setup
+
+For most users, the standard `uvx` setup is recommended:
+
+```json
+{
+  "mcpServers": {
+    "anime": {
+      "command": "uvx",
+      "args": ["mcp-server-anime"],
+      "disabled": false
+    }
+  }
+}
+```
+
+**Location**: `.kiro/settings/mcp.json` (workspace) or `~/.kiro/settings/mcp.json` (global)
 
 ## Prerequisites
 
 1. **Kiro IDE**: Ensure you have Kiro IDE installed and running
-2. **uvx**: Install `uv` and `uvx` for package management:
+2. **Python 3.12+**: Required for the MCP server
+3. **uvx**: Install `uv` and `uvx` for package management:
    ```bash
-   # Install uv (Python package manager)
    pip install uv
    # uvx is included with uv
    ```
 
-## Installation
+## Installation Methods
 
-### Method 1: Automatic Installation via Kiro
+### Method 1: Automatic Installation (Recommended)
 
 1. Open Kiro IDE
-2. Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
-3. Search for "MCP" and select "Configure MCP Servers"
-4. Add a new server configuration (see Configuration section below)
+2. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+3. Search for "MCP" → "Configure MCP Servers"
+4. Add the configuration (see Quick Setup above)
 5. Kiro will automatically install the package when first used
 
 ### Method 2: Pre-install with uvx
@@ -28,13 +58,13 @@ This guide explains how to configure and use the mcp-server-anime with Kiro IDE.
 uvx install mcp-server-anime
 ```
 
+### Method 3: Local Development
+
+See [Local Development Setup](#local-development-setup) section below.
+
 ## Configuration
 
 ### Basic Configuration
-
-Add the following to your Kiro MCP configuration file:
-
-**Location**: `.kiro/settings/mcp.json` (workspace-level) or `~/.kiro/settings/mcp.json` (user-level)
 
 ```json
 {
@@ -49,7 +79,7 @@ Add the following to your Kiro MCP configuration file:
 }
 ```
 
-### Advanced Configuration with Environment Variables
+### Advanced Configuration
 
 ```json
 {
@@ -80,7 +110,7 @@ Add the following to your Kiro MCP configuration file:
 | `command` | Command to run the server | `"uvx"` |
 | `args` | Arguments for the command | `["mcp-server-anime"]` |
 | `disabled` | Whether the server is disabled | `false` |
-| `env` | Environment variables | See environment variables section |
+| `env` | Environment variables | See below |
 | `autoApprove` | Tools to auto-approve | `["anime_search"]` |
 
 ### Environment Variables
@@ -94,6 +124,100 @@ Add the following to your Kiro MCP configuration file:
 | `ANIDB_RATE_LIMIT_DELAY` | Seconds between requests | `2.0` | `3.0` |
 | `ANIDB_MAX_RETRIES` | Max retry attempts | `3` | `5` |
 | `ANIDB_CACHE_TTL` | Cache duration (seconds) | `3600` | `7200` |
+
+## Local Development Setup
+
+When developing the MCP server locally or when `uvx` caching causes issues, use the direct Python executable approach.
+
+### Prerequisites for Development
+
+1. **Python Environment**: Python 3.12+ installed
+2. **Package Installation**: Install the package in your environment
+3. **Source Code**: Have the source code available locally
+
+### Configuration Steps
+
+#### 1. Find Your Python Executable Path
+
+**For Anaconda/Miniconda:**
+```bash
+conda info --envs
+# Look for your environment path
+```
+
+**For Virtual Environments:**
+```bash
+# Activate your environment first
+which python  # Linux/Mac
+where python  # Windows
+```
+
+#### 2. Locate Your Source Code Directory
+
+Note the full path to your cloned repository:
+- Windows: `D:/Documents/Code/mcp-server-anime`
+- Linux/Mac: `/home/user/projects/mcp-server-anime`
+
+#### 3. Update Kiro MCP Configuration
+
+**Windows Example:**
+```json
+{
+  "mcpServers": {
+    "anime": {
+      "command": "D:/Languages/Anaconda/envs/mcp-server-anime/python.exe",
+      "args": ["-m", "mcp_server_anime.server"],
+      "cwd": "D:/Documents/Code/mcp-server-anime",
+      "env": {
+        "PYTHONPATH": "D:/Documents/Code/mcp-server-anime/src"
+      },
+      "disabled": false
+    }
+  }
+}
+```
+
+**Linux/Mac Example:**
+```json
+{
+  "mcpServers": {
+    "anime": {
+      "command": "/home/user/.conda/envs/mcp-server-anime/bin/python",
+      "args": ["-m", "mcp_server_anime.server"],
+      "cwd": "/home/user/projects/mcp-server-anime",
+      "env": {
+        "PYTHONPATH": "/home/user/projects/mcp-server-anime/src"
+      },
+      "disabled": false
+    }
+  }
+}
+```
+
+### Development Configuration Parameters
+
+| Parameter | Purpose | Example |
+|-----------|---------|---------|
+| `command` | Direct path to Python executable | `D:/Languages/Anaconda/envs/mcp-server-anime/python.exe` |
+| `args` | Arguments to run the server module | `["-m", "mcp_server_anime.server"]` |
+| `cwd` | Working directory for the process | `D:/Documents/Code/mcp-server-anime` |
+| `env.PYTHONPATH` | Path to source code | `D:/Documents/Code/mcp-server-anime/src` |
+
+### Switching Back to Production
+
+Once you're ready to use the published version:
+
+```json
+{
+  "mcpServers": {
+    "anime": {
+      "command": "uvx",
+      "args": ["mcp-server-anime"],
+      "disabled": false
+    }
+  }
+}
+```
 
 ## Usage in Kiro
 
@@ -116,17 +240,18 @@ Once configured, you can use anime-related queries in Kiro's AI chat:
 
 ### 3. Available Tools
 
-The server provides these tools to Kiro:
-
 #### anime_search
 - **Purpose**: Search for anime by title
 - **Usage**: "Search for anime with 'dragon' in the title"
-- **Parameters**: query (required), limit (optional, max 20)
+- **Parameters**:
+  - `query` (required): Search term
+  - `limit` (optional): Max results (default: 10, max: 20)
 
-#### anime_details  
+#### anime_details
 - **Purpose**: Get detailed anime information
 - **Usage**: "Get details for anime ID 9541"
-- **Parameters**: aid (AniDB anime ID, required)
+- **Parameters**:
+  - `aid` (required): AniDB anime ID
 
 ## Troubleshooting
 
@@ -147,22 +272,40 @@ The server provides these tools to Kiro:
    - Look for MCP-related error messages
    - Check the Output panel for server logs
 
-### Common Configuration Issues
+### Common Issues
 
-**Issue**: Server shows as "Disconnected"
-**Solution**: 
+#### Issue: `ModuleNotFoundError: No module named 'mcp_server_anime'`
+
+**Cause**: Python can't find the module.
+
+**Solutions**:
+1. Check PYTHONPATH points to the `src` directory
+2. Run `poetry install` or `pip install -e .` in the project directory
+3. Verify the `command` points to the correct Python executable
+
+#### Issue: `ImportError: cannot import name 'APIError'`
+
+**Cause**: Using an outdated cached version from `uvx`.
+
+**Solution**: Switch to the local development setup.
+
+#### Issue: Server shows as "Disconnected"
+
+**Solutions**:
 - Verify JSON syntax in mcp.json
 - Check that uvx is in PATH
 - Restart Kiro after configuration changes
 
-**Issue**: Tools not appearing in chat
-**Solution**:
+#### Issue: Tools not appearing in chat
+
+**Solutions**:
 - Verify server is connected
 - Check autoApprove settings
 - Try manually approving tools when prompted
 
-**Issue**: API rate limit errors
-**Solution**:
+#### Issue: API rate limit errors
+
+**Solutions**:
 - Increase `ANIDB_RATE_LIMIT_DELAY` to 3.0 or higher
 - Reduce concurrent requests
 
@@ -181,6 +324,16 @@ Enable debug logging for troubleshooting:
   }
 }
 ```
+
+### Verification Steps
+
+After updating the configuration:
+
+1. **Restart Kiro** or reconnect the MCP server
+2. **Check MCP Logs** for successful connection messages
+3. **Verify Tools**: You should see these tools available:
+   - `anime_search` - Search for anime by title
+   - `anime_details` - Get detailed anime information
 
 ## Best Practices
 
@@ -208,8 +361,6 @@ Enable debug logging for troubleshooting:
 
 ### Example 1: Anime Research Assistant
 
-Configure Kiro to help with anime research:
-
 ```json
 {
   "mcpServers": {
@@ -231,13 +382,11 @@ Configure Kiro to help with anime research:
 
 ### Example 2: Content Creator Setup
 
-For content creators needing anime information:
-
 ```json
 {
   "mcpServers": {
     "anime": {
-      "command": "uvx", 
+      "command": "uvx",
       "args": ["mcp-server-anime", "--log-level", "WARNING"],
       "disabled": false,
       "env": {
@@ -285,3 +434,9 @@ If you encounter issues:
    - Server configuration (sanitized)
    - Error messages
    - Steps to reproduce
+
+## See Also
+
+- [Configuration Guide](configuration.md) - General configuration options
+- [Developer Guide](developer-guide.md) - Development workflow
+- [Architecture](architecture.md) - System architecture

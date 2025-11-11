@@ -5,21 +5,20 @@ This module provides entry points for various test commands that can be
 executed through Poetry scripts.
 """
 
-import sys
 import subprocess
-from typing import List
+import sys
 
 
-def run_pytest_command(args: List[str]) -> int:
+def run_pytest_command(args: list[str]) -> int:
     """Run pytest with the given arguments.
-    
+
     Args:
         args: Arguments to pass to pytest
-        
+
     Returns:
         Exit code from pytest
     """
-    cmd = ["pytest"] + args
+    cmd = ["pytest", *args]
     result = subprocess.run(cmd)
     return result.returncode
 
@@ -37,6 +36,7 @@ def test_unit() -> int:
 def test_integration() -> int:
     """Run integration tests only."""
     import os
+
     # Set environment variable to enable integration tests
     os.environ["RUN_INTEGRATION_TESTS"] = "1"
     return run_pytest_command(["-m", "integration"])
@@ -44,25 +44,30 @@ def test_integration() -> int:
 
 def test_coverage() -> int:
     """Run tests with coverage reporting."""
-    return run_pytest_command([
-        "--cov=src/mcp_server_anime",
-        "--cov-report=term-missing",
-        "--cov-report=html:htmlcov",
-        "--cov-report=xml:coverage.xml",
-        "--cov-branch"
-    ])
+    return run_pytest_command(
+        [
+            "--cov=src/mcp_server_anime",
+            "--cov-report=term-missing",
+            "--cov-report=html:htmlcov",
+            "--cov-report=xml:coverage.xml",
+            "--cov-branch",
+        ]
+    )
 
 
 def test_coverage_unit() -> int:
     """Run unit tests with coverage reporting."""
-    return run_pytest_command([
-        "-m", "not integration",
-        "--cov=src/mcp_server_anime",
-        "--cov-report=term-missing",
-        "--cov-report=html:htmlcov",
-        "--cov-report=xml:coverage.xml",
-        "--cov-branch"
-    ])
+    return run_pytest_command(
+        [
+            "-m",
+            "not integration",
+            "--cov=src/mcp_server_anime",
+            "--cov-report=term-missing",
+            "--cov-report=html:htmlcov",
+            "--cov-report=xml:coverage.xml",
+            "--cov-branch",
+        ]
+    )
 
 
 def test_fast() -> int:
@@ -87,12 +92,7 @@ def test_failing() -> int:
 
 def test_isolation() -> int:
     """Run tests with isolation checking."""
-    return run_pytest_command([
-        "-v",
-        "--tb=short",
-        "--maxfail=1",
-        "--random-order"
-    ])
+    return run_pytest_command(["-v", "--tb=short", "--maxfail=1", "--random-order"])
 
 
 if __name__ == "__main__":

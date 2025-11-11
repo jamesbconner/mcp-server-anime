@@ -9,7 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from ..core.logging_config import get_logger
+from mcp_server_anime.core.logging_config import get_logger
 
 logger = get_logger(__name__)
 

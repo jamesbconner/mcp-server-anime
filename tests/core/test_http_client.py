@@ -7,13 +7,13 @@ from unittest.mock import AsyncMock, Mock, patch
 import httpx
 import pytest
 
+from src.mcp_server_anime.core.exceptions import APIError
 from src.mcp_server_anime.core.http_client import (
     HTTPClient,
     RateLimiter,
     RetryConfig,
     create_http_client,
 )
-from src.mcp_server_anime.core.models import APIError
 from src.mcp_server_anime.providers.anidb.config import AniDBConfig
 
 
@@ -66,7 +66,7 @@ class TestRateLimiter:
             return request_id, time.time() - start_time
 
         # Start multiple concurrent requests
-        start_time = time.time()
+        time.time()
         tasks = [make_request(i) for i in range(3)]
         results = await asyncio.gather(*tasks)
 
