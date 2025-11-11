@@ -13,7 +13,7 @@ from .cache import TTLCache, generate_cache_key
 from .exceptions import DatabaseError
 from .logging_config import get_logger, log_cache_operation
 from .models import AnimeDetails, AnimeSearchResult
-from .multi_provider_db import MultiProviderDatabase, get_multi_provider_database
+from .multi_provider_db import get_multi_provider_database
 from .persistent_cache_models import (
     CacheSerializer,
     PersistentCacheEntry,
@@ -25,14 +25,14 @@ logger = get_logger(__name__)
 
 class PersistentCache:
     """Hybrid cache with in-memory and SQLite persistence.
-    
+
     This cache implements a two-tier strategy:
     1. L1 Cache (Memory): Fast TTLCache for immediate access
     2. L2 Cache (SQLite): Persistent storage for durability across restarts
-    
+
     The cache automatically promotes database hits to memory cache and handles
     graceful degradation when database operations fail.
-    
+
     Example:
         >>> cache = PersistentCache(
         ...     memory_ttl=3600.0,      # 1 hour memory cache
@@ -66,9 +66,7 @@ class PersistentCache:
         self.max_memory_size = max_memory_size
 
         # Initialize memory cache
-        self._memory_cache = TTLCache(
-            max_size=max_memory_size, default_ttl=memory_ttl
-        )
+        self._memory_cache = TTLCache(max_size=max_memory_size, default_ttl=memory_ttl)
 
         # Initialize database
         self._db = get_multi_provider_database(db_path)
@@ -143,7 +141,9 @@ class PersistentCache:
                     await self._db.delete_cache_entry(key)
                     self._stats.db_misses += 1
                     self._stats.total_misses += 1
-                    log_cache_operation("get", key, hit=False, source="database", reason="expired")
+                    log_cache_operation(
+                        "get", key, hit=False, source="database", reason="expired"
+                    )
                     logger.debug(f"Database cache entry expired for key: {key}")
                     return None
 
@@ -173,9 +173,7 @@ class PersistentCache:
                 self._stats.total_misses += 1
                 return None
 
-    async def set(
-        self, key: str, value: Any, source_data: str | None = None
-    ) -> None:
+    async def set(self, key: str, value: Any, source_data: str | None = None) -> None:
         """Store a value in both memory and database caches.
 
         Args:
@@ -227,7 +225,9 @@ class PersistentCache:
                     logger.debug(f"Cached value for key: {key} in memory only")
             else:
                 log_cache_operation("set", key, source="memory_only")
-                logger.debug(f"Cached value for key: {key} in memory only (DB unavailable)")
+                logger.debug(
+                    f"Cached value for key: {key} in memory only (DB unavailable)"
+                )
 
     async def delete(self, key: str) -> bool:
         """Remove a specific key from both caches.
@@ -263,7 +263,9 @@ class PersistentCache:
             if self._db_available:
                 try:
                     cleared_count = await self._db.clear_cache()
-                    logger.info(f"Cleared {cleared_count} entries from persistent cache")
+                    logger.info(
+                        f"Cleared {cleared_count} entries from persistent cache"
+                    )
                 except DatabaseError as e:
                     logger.warning(f"Database cache clear failed: {e}")
                     self._handle_db_error("clear", e)
@@ -320,9 +322,9 @@ class PersistentCache:
 
             # Calculate average access times
             if self._memory_access_times:
-                self._stats.avg_memory_access_time = sum(self._memory_access_times) / len(
+                self._stats.avg_memory_access_time = sum(
                     self._memory_access_times
-                )
+                ) / len(self._memory_access_times)
                 # Keep only recent measurements (last 100)
                 self._memory_access_times = self._memory_access_times[-100:]
 
@@ -334,7 +336,9 @@ class PersistentCache:
                 self._db_access_times = self._db_access_times[-100:]
 
             # Estimate memory size (rough calculation)
-            self._stats.memory_size_estimate = self._stats.memory_entries * 15000  # ~15KB per entry
+            self._stats.memory_size_estimate = (
+                self._stats.memory_entries * 15000
+            )  # ~15KB per entry
 
             # Update totals
             self._stats.total_hits = self._stats.memory_hits + self._stats.db_hits
@@ -422,7 +426,9 @@ class PersistentCache:
         # Mark database as unavailable for future operations
         if isinstance(error, DatabaseError):
             self._db_available = False
-            logger.info("Database cache marked as unavailable, falling back to memory-only mode")
+            logger.info(
+                "Database cache marked as unavailable, falling back to memory-only mode"
+            )
 
     async def invalidate_cache_key(self, method: str, **params: Any) -> bool:
         """Invalidate a specific cache entry by regenerating its key.

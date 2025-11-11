@@ -25,14 +25,17 @@ try:
     from ..providers.anidb.titles_downloader import TitlesDownloader
 except ImportError:
     # Fall back to absolute imports (when run directly)
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-    from src.mcp_server_anime.core.database_config import get_local_db_config, validate_config
-    from src.mcp_server_anime.core.index_optimization import create_index_optimizer
-    from src.mcp_server_anime.core.multi_provider_db import get_multi_provider_database
-    from src.mcp_server_anime.core.schema_manager import create_schema_manager
-    from src.mcp_server_anime.core.transaction_logger import get_transaction_logger
-    from src.mcp_server_anime.providers.anidb.search_service import get_search_service
-    from src.mcp_server_anime.providers.anidb.titles_downloader import TitlesDownloader
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
+    from mcp_server_anime.core.database_config import (
+        get_local_db_config,
+        validate_config,
+    )
+    from mcp_server_anime.core.index_optimization import create_index_optimizer
+    from mcp_server_anime.core.multi_provider_db import get_multi_provider_database
+    from mcp_server_anime.core.schema_manager import create_schema_manager
+    from mcp_server_anime.core.transaction_logger import get_transaction_logger
+    from mcp_server_anime.providers.anidb.search_service import get_search_service
+    from mcp_server_anime.providers.anidb.titles_downloader import TitlesDownloader
 
 
 class DatabaseCLI:

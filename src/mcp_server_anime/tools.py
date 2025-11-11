@@ -229,8 +229,6 @@ def register_anime_tools(mcp: FastMCP) -> None:
                 raise RuntimeError(f"AniDB details fetch failed: {e}") from e
 
 
-
-
 def _format_anime_details(details: AnimeDetails) -> dict[str, Any]:
     """Format AnimeDetails for MCP response.
 
@@ -278,12 +276,14 @@ def _format_anime_details(details: AnimeDetails) -> dict[str, Any]:
     # Format similar anime list
     similar_anime = []
     for similar in details.similar_anime:
-        similar_anime.append({
-            "aid": similar.aid,
-            "title": similar.title,
-            "approval": similar.approval,
-            "total": similar.total,
-        })
+        similar_anime.append(
+            {
+                "aid": similar.aid,
+                "title": similar.title,
+                "approval": similar.approval,
+                "total": similar.total,
+            }
+        )
 
     # Format episodes list
     episodes = []
@@ -346,7 +346,7 @@ def _format_anime_details(details: AnimeDetails) -> dict[str, Any]:
             }
             for va in character.voice_actors
         ]
-        
+
         character_data = {
             "name": character.name,
             "id": character.id,

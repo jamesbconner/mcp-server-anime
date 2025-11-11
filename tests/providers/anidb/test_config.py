@@ -24,7 +24,10 @@ class TestAniDBConfig:
         assert config.max_retries == 3
         assert config.cache_ttl == 3600
         assert config.timeout == 30.0
-        assert config.user_agent == "mcp-server-anidb/1.0"
+        assert (
+            config.user_agent
+            == "mcp-server-anime/0.2.1 (https://github.com/jamesbconner/mcp-server-anime)"
+        )
 
     def test_custom_configuration(self) -> None:
         """Test creating configuration with custom values."""
@@ -216,6 +219,9 @@ class TestAniDBConfig:
         headers = config.get_http_headers()
         expected = {
             "User-Agent": "test-agent/1.0",
+            "Accept": "application/xml, text/xml",
+            "Accept-Encoding": "gzip, deflate, identity",
+            "Accept-Charset": "utf-8",
         }
 
         assert headers == expected
@@ -389,7 +395,10 @@ class TestConfigIntegration:
         # Get HTTP headers
         headers = config.get_http_headers()
         assert "User-Agent" in headers
-        assert headers["User-Agent"] == "mcp-server-anidb/1.0"
+        assert (
+            headers["User-Agent"]
+            == "mcp-server-anime/0.2.1 (https://github.com/jamesbconner/mcp-server-anime)"
+        )
 
     def test_env_to_config_to_params(self) -> None:
         """Test full workflow from environment variables to API parameters."""

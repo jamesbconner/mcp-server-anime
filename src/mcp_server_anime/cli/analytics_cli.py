@@ -28,14 +28,14 @@ try:
     from ..providers.anidb.service import create_anidb_service
 except ImportError:
     # Fall back to absolute imports (when run directly)
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-    from src.mcp_server_anime.core.analytics_scheduler import get_analytics_scheduler
-    from src.mcp_server_anime.core.database_config import get_local_db_config
-    from src.mcp_server_anime.core.index_optimization import create_index_optimizer
-    from src.mcp_server_anime.core.multi_provider_db import get_multi_provider_database
-    from src.mcp_server_anime.core.transaction_logger import get_transaction_logger
-    from src.mcp_server_anime.providers.anidb.config import load_config
-    from src.mcp_server_anime.providers.anidb.service import create_anidb_service
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
+    from mcp_server_anime.core.analytics_scheduler import get_analytics_scheduler
+    from mcp_server_anime.core.database_config import get_local_db_config
+    from mcp_server_anime.core.index_optimization import create_index_optimizer
+    from mcp_server_anime.core.multi_provider_db import get_multi_provider_database
+    from mcp_server_anime.core.transaction_logger import get_transaction_logger
+    from mcp_server_anime.providers.anidb.config import load_config
+    from mcp_server_anime.providers.anidb.service import create_anidb_service
 
 
 class AnalyticsCLI:
@@ -409,21 +409,23 @@ class AnalyticsCLI:
                 try:
                     config = load_config()
                     service = await create_anidb_service(config)
-                    
+
                     # Use asyncio.wait_for to add a timeout
                     async def get_service_stats():
                         async with service:
                             return await service.get_cache_stats()
-                    
-                    service_stats = await asyncio.wait_for(get_service_stats(), timeout=3.0)
+
+                    service_stats = await asyncio.wait_for(
+                        get_service_stats(), timeout=3.0
+                    )
                     service_available = True
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.debug("Service cache stats retrieval timed out")
                     service_available = False
                 except Exception as e:
                     logger.debug(f"Could not get service cache stats: {e}")
                     service_available = False
-                
+
                 # Get persistent database stats directly
                 db_stats = None
                 try:
@@ -431,81 +433,112 @@ class AnalyticsCLI:
                     db_stats = await db.get_cache_stats()
                 except Exception as e:
                     logger.debug(f"Could not get database cache stats: {e}")
-                
+
                 # If neither service nor database is available, return error
                 if not service_available and db_stats is None:
                     result = {
                         "success": False,
                         "error": "Neither service cache nor persistent database available",
-                        "provider": provider
+                        "provider": provider,
                     }
-                    
+
                     if json_output:
                         print(json.dumps(result, indent=2))
                     else:
                         print(f"❌ Cache not available for {provider}")
-                    
+
                     return result
 
                 # Process database stats (handle None case)
                 providers = {}
                 methods = {}
-                
+
                 if db_stats is not None:
                     providers = {
-                        prov_name: stats['count'] 
-                        for prov_name, stats in db_stats.get('providers', {}).items()
+                        prov_name: stats["count"]
+                        for prov_name, stats in db_stats.get("providers", {}).items()
                     }
-                    
+
                     methods = {
-                        method: stats['count'] 
-                        for method, stats in db_stats.get('methods', {}).items()
+                        method: stats["count"]
+                        for method, stats in db_stats.get("methods", {}).items()
                     }
-                
+
                 # Combine service and database stats
                 combined_stats = {}
-                
+
                 # Add service cache stats if available
                 if service_stats:
-                    combined_stats.update(service_stats.model_dump() if hasattr(service_stats, 'model_dump') else service_stats)
+                    combined_stats.update(
+                        service_stats.model_dump()
+                        if hasattr(service_stats, "model_dump")
+                        else service_stats
+                    )
                 else:
                     # Service cache is available but empty/not initialized
-                    combined_stats.update({
-                        "memory_entries": 0,
-                        "hits": 0,
-                        "misses": 0,
-                        "memory_hits": 0,
-                        "memory_misses": 0,
-                        "db_hits": 0,
-                        "db_misses": 0,
-                        "total_hits": 0,
-                        "total_misses": 0,
-                        "db_available": db_stats is not None
-                    })
-                
+                    combined_stats.update(
+                        {
+                            "memory_entries": 0,
+                            "hits": 0,
+                            "misses": 0,
+                            "memory_hits": 0,
+                            "memory_misses": 0,
+                            "db_hits": 0,
+                            "db_misses": 0,
+                            "total_hits": 0,
+                            "total_misses": 0,
+                            "db_available": db_stats is not None,
+                        }
+                    )
+
                 # Add database stats if available
                 if db_stats is not None:
-                    combined_stats.update({
-                        "persistent_entries": db_stats.get('total_entries', 0),
-                        "persistent_active_entries": db_stats.get('active_entries', 0),
-                        "persistent_expired_entries": db_stats.get('expired_entries', 0),
-                        "persistent_providers": providers,
-                        "persistent_methods": methods,
-                        "total_data_size": db_stats.get('total_data_size', 0),
-                        "db_file_size": db_stats.get('db_file_size', 0),
-                        "total_entries": combined_stats.get("memory_entries", 0) + db_stats.get('total_entries', 0),
-                        "db_entries": db_stats.get('total_entries', 0)
-                    })
-                
+                    combined_stats.update(
+                        {
+                            "persistent_entries": db_stats.get("total_entries", 0),
+                            "persistent_active_entries": db_stats.get(
+                                "active_entries", 0
+                            ),
+                            "persistent_expired_entries": db_stats.get(
+                                "expired_entries", 0
+                            ),
+                            "persistent_providers": providers,
+                            "persistent_methods": methods,
+                            "total_data_size": db_stats.get("total_data_size", 0),
+                            "db_file_size": db_stats.get("db_file_size", 0),
+                            "total_entries": combined_stats.get("memory_entries", 0)
+                            + db_stats.get("total_entries", 0),
+                            "db_entries": db_stats.get("total_entries", 0),
+                        }
+                    )
+
                 # Calculate metrics
-                total_requests = combined_stats.get('hits', 0) + combined_stats.get('misses', 0)
-                hit_rate = (combined_stats.get('hits', 0) / total_requests * 100) if total_requests > 0 else 0
-                
-                memory_requests = combined_stats.get('memory_hits', 0) + combined_stats.get('memory_misses', 0)
-                memory_hit_rate = (combined_stats.get('memory_hits', 0) / memory_requests * 100) if memory_requests > 0 else 0
-                
-                db_requests = combined_stats.get('db_hits', 0) + combined_stats.get('db_misses', 0)
-                db_hit_rate = (combined_stats.get('db_hits', 0) / db_requests * 100) if db_requests > 0 else 0
+                total_requests = combined_stats.get("hits", 0) + combined_stats.get(
+                    "misses", 0
+                )
+                hit_rate = (
+                    (combined_stats.get("hits", 0) / total_requests * 100)
+                    if total_requests > 0
+                    else 0
+                )
+
+                memory_requests = combined_stats.get(
+                    "memory_hits", 0
+                ) + combined_stats.get("memory_misses", 0)
+                memory_hit_rate = (
+                    (combined_stats.get("memory_hits", 0) / memory_requests * 100)
+                    if memory_requests > 0
+                    else 0
+                )
+
+                db_requests = combined_stats.get("db_hits", 0) + combined_stats.get(
+                    "db_misses", 0
+                )
+                db_hit_rate = (
+                    (combined_stats.get("db_hits", 0) / db_requests * 100)
+                    if db_requests > 0
+                    else 0
+                )
 
                 # Create result structure
                 result = {
@@ -519,9 +552,9 @@ class AnalyticsCLI:
                         "total_requests": total_requests,
                         "overall_hit_rate": round(hit_rate, 2),
                         "memory_hit_rate": round(memory_hit_rate, 2),
-                        "db_hit_rate": round(db_hit_rate, 2)
+                        "db_hit_rate": round(db_hit_rate, 2),
                     },
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
 
                 if json_output:
@@ -532,7 +565,7 @@ class AnalyticsCLI:
                 print(f"📊 Cache Statistics for {provider.upper()}")
                 print("=" * 50)
                 print()
-                
+
                 # Show cache status
                 print("🔧 Cache Status:")
                 if service_available:
@@ -542,40 +575,42 @@ class AnalyticsCLI:
                         service_status = "✅ Available (0 entries)"
                 else:
                     service_status = "❌ Not Available"
-                
-                db_status = "✅ Available" if db_stats is not None else "❌ Not Available"
+
+                db_status = (
+                    "✅ Available" if db_stats is not None else "❌ Not Available"
+                )
                 print(f"  Service cache: {service_status}")
                 print(f"  Persistent database: {db_status}")
                 print()
-                
+
                 print("🗄️  Storage:")
                 print(f"  Total entries: {combined_stats.get('total_entries', 0)}")
                 print(f"  Memory entries: {combined_stats.get('memory_entries', 0)}")
                 print(f"  Database entries: {combined_stats.get('db_entries', 0)}")
-                
+
                 if db_stats is not None:
                     print(f"  Active entries: {db_stats.get('active_entries', 0)}")
                     print(f"  Expired entries: {db_stats.get('expired_entries', 0)}")
-                
+
                 if providers:
                     print("  Persistent entries by provider:")
                     for prov, count in providers.items():
                         print(f"    {prov}: {count} entries")
-                
+
                 if methods:
                     print("  Persistent entries by method:")
                     for method, count in methods.items():
                         print(f"    {method}: {count} entries")
-                
+
                 if db_stats is not None:
-                    data_size_mb = db_stats.get('total_data_size', 0) / (1024 * 1024)
+                    data_size_mb = db_stats.get("total_data_size", 0) / (1024 * 1024)
                     print(f"  Total cached data size: {data_size_mb:.2f} MB")
-                    
-                    db_size_mb = db_stats.get('db_file_size', 0) / (1024 * 1024)
+
+                    db_size_mb = db_stats.get("db_file_size", 0) / (1024 * 1024)
                     print(f"  Database file size: {db_size_mb:.2f} MB")
-                
+
                 print()
-                
+
                 if total_requests > 0:
                     print("📈 Performance (Runtime Stats):")
                     print(f"  Total requests: {total_requests}")
@@ -583,56 +618,60 @@ class AnalyticsCLI:
                     print(f"  Cache hits: {combined_stats.get('hits', 0)}")
                     print(f"  Cache misses: {combined_stats.get('misses', 0)}")
                     print()
-                    
+
                     print("💾 Memory Cache:")
                     print(f"  Memory hits: {combined_stats.get('memory_hits', 0)}")
                     print(f"  Memory misses: {combined_stats.get('memory_misses', 0)}")
                     print(f"  Memory hit rate: {memory_hit_rate:.1f}%")
-                    if 'avg_memory_access_time' in combined_stats:
-                        print(f"  Avg access time: {combined_stats['avg_memory_access_time']:.3f}ms")
+                    if "avg_memory_access_time" in combined_stats:
+                        print(
+                            f"  Avg access time: {combined_stats['avg_memory_access_time']:.3f}ms"
+                        )
                     print()
-                    
+
                     print("🗃️  Database Cache:")
                     print(f"  DB hits: {combined_stats.get('db_hits', 0)}")
                     print(f"  DB misses: {combined_stats.get('db_misses', 0)}")
                     print(f"  DB hit rate: {db_hit_rate:.1f}%")
-                    if 'avg_db_access_time' in combined_stats:
-                        print(f"  Avg access time: {combined_stats['avg_db_access_time']:.3f}ms")
+                    if "avg_db_access_time" in combined_stats:
+                        print(
+                            f"  Avg access time: {combined_stats['avg_db_access_time']:.3f}ms"
+                        )
                     print()
                 else:
                     if service_available:
-                        print("📈 Performance: No runtime statistics yet (service cache available but no requests processed)")
+                        print(
+                            "📈 Performance: No runtime statistics yet (service cache available but no requests processed)"
+                        )
                     else:
-                        print("📈 Performance: No runtime statistics available (service cache not accessible)")
+                        print(
+                            "📈 Performance: No runtime statistics available (service cache not accessible)"
+                        )
 
                 return result
             else:
                 result = {
                     "success": False,
                     "error": f"Cache stats not supported for provider: {provider}",
-                    "supported_providers": ["anidb"]
+                    "supported_providers": ["anidb"],
                 }
-                
+
                 if json_output:
                     print(json.dumps(result, indent=2))
                 else:
                     print(f"❌ Cache stats not supported for provider: {provider}")
                     print("   Supported providers: anidb")
-                
+
                 return result
 
         except Exception as e:
-            result = {
-                "success": False,
-                "error": str(e),
-                "provider": provider
-            }
-            
+            result = {"success": False, "error": str(e), "provider": provider}
+
             if json_output:
                 print(json.dumps(result, indent=2))
             else:
                 print(f"❌ Failed to get cache stats for {provider}: {e}")
-            
+
             return result
 
 

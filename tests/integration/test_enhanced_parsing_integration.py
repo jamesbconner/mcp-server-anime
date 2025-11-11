@@ -4,7 +4,6 @@ This module contains integration tests that verify the complete flow
 from XML parsing to MCP tool response formatting with enhanced fields.
 """
 
-import pytest
 from datetime import datetime
 
 from src.mcp_server_anime.providers.anidb.xml_parser import parse_anime_details
@@ -25,7 +24,7 @@ class TestEnhancedParsingIntegration:
             <startdate>1995-10-04</startdate>
             <enddate>1996-03-27</enddate>
             <description>A mecha anime series about teenage pilots.</description>
-            
+
             <episodes>
                 <episode id="1">
                     <title>Angel Attack</title>
@@ -40,7 +39,7 @@ class TestEnhancedParsingIntegration:
                     <length>24</length>
                 </episode>
             </episodes>
-            
+
             <resources>
                 <resource type="1" externalentity="30" url="https://myanimelist.net/anime/30">
                     MyAnimeList Entry
@@ -52,7 +51,7 @@ class TestEnhancedParsingIntegration:
                     Official Site
                 </resource>
             </resources>
-            
+
             <characters>
                 <character id="89">
                     <name>Shinji Ikari</name>
@@ -72,7 +71,7 @@ class TestEnhancedParsingIntegration:
                     </seiyuu>
                 </character>
             </characters>
-            
+
             <tags>
                 <tag id="2274" weight="600" spoiler="false" verified="true">
                     <name>robot</name>
@@ -87,7 +86,7 @@ class TestEnhancedParsingIntegration:
                     <description>Deep psychological themes and character development.</description>
                 </tag>
             </tags>
-            
+
             <recommendations>
                 <recommendation type="Must See" uid="12345">
                     <text>A masterpiece of anime that redefined the mecha genre. Essential viewing for any anime fan.</text>
@@ -213,14 +212,14 @@ class TestEnhancedParsingIntegration:
             <type>Movie</type>
             <episodecount>1</episodecount>
             <title>Test Movie</title>
-            
+
             <episodes>
                 <episode id="1">
                     <title>Full Movie</title>
                     <length>120</length>
                 </episode>
             </episodes>
-            
+
             <tags>
                 <tag id="100">
                     <name>movie</name>
@@ -257,10 +256,10 @@ class TestEnhancedParsingIntegration:
             <type>TV Series</type>
             <episodecount>100</episodecount>
             <title>Long Running Series</title>
-            
+
             <episodes>
         """
-        
+
         # Add many episodes
         for i in range(1, 51):  # 50 episodes
             xml_content += f"""
@@ -270,13 +269,13 @@ class TestEnhancedParsingIntegration:
                     <length>24</length>
                 </episode>
             """
-        
+
         xml_content += """
             </episodes>
-            
+
             <characters>
         """
-        
+
         # Add many characters
         for i in range(1, 21):  # 20 characters
             xml_content += f"""
@@ -285,13 +284,13 @@ class TestEnhancedParsingIntegration:
                     <description>Description for character {i}.</description>
                 </character>
             """
-        
+
         xml_content += """
             </characters>
-            
+
             <tags>
         """
-        
+
         # Add many tags
         for i in range(1, 31):  # 30 tags
             xml_content += f"""
@@ -300,7 +299,7 @@ class TestEnhancedParsingIntegration:
                     <description>Description for tag {i}.</description>
                 </tag>
             """
-        
+
         xml_content += """
             </tags>
         </anime>
@@ -323,7 +322,9 @@ class TestEnhancedParsingIntegration:
 
         # Performance should be reasonable (less than 1 second for this amount of data)
         assert parsing_time < 1.0, f"Parsing took too long: {parsing_time:.3f}s"
-        assert formatting_time < 1.0, f"Formatting took too long: {formatting_time:.3f}s"
+        assert formatting_time < 1.0, (
+            f"Formatting took too long: {formatting_time:.3f}s"
+        )
 
         # Verify formatted response
         assert len(formatted_response["episodes"]) == 50
@@ -340,12 +341,12 @@ class TestEnhancedParsingIntegration:
             <title>Classic Anime</title>
             <startdate>1990-01-01</startdate>
             <description>A classic anime from the 90s.</description>
-            
+
             <titles>
                 <title type="main" xml:lang="en">Classic Anime</title>
                 <title type="official" xml:lang="ja">クラシックアニメ</title>
             </titles>
-            
+
             <creators>
                 <name id="123" type="Direction">Famous Director</name>
             </creators>

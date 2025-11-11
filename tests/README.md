@@ -153,7 +153,7 @@ When adding new tests:
 @pytest.mark.asyncio
 async def test_new_functionality(service: AniDBService) -> None:
     """Test description explaining what is being verified.
-    
+
     This test verifies that:
     - Specific behavior 1
     - Specific behavior 2
@@ -161,10 +161,10 @@ async def test_new_functionality(service: AniDBService) -> None:
     """
     # Arrange
     test_data = "test input"
-    
+
     # Act
     result = await service.some_method(test_data)
-    
+
     # Assert
     assert result is not None
     assert len(result) > 0

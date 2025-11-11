@@ -5,8 +5,9 @@ functionality maintains backward compatibility with existing code and
 doesn't break any existing functionality.
 """
 
-import pytest
 from datetime import datetime
+
+import pytest
 
 from src.mcp_server_anime.core.models import AnimeDetails
 from src.mcp_server_anime.providers.anidb.xml_parser import parse_anime_details
@@ -56,28 +57,28 @@ class TestBackwardCompatibilityRegression:
             <startdate>1995-10-04</startdate>
             <enddate>1996-03-27</enddate>
             <description>Mecha anime series.</description>
-            
+
             <titles>
                 <title type="main" xml:lang="en">Neon Genesis Evangelion</title>
                 <title type="official" xml:lang="ja">新世紀エヴァンゲリオン</title>
             </titles>
-            
+
             <creators>
                 <name id="5111" type="Direction">Hideaki Anno</name>
                 <name id="5112" type="Music">Shiro Sagisu</name>
             </creators>
-            
+
             <relatedanime>
                 <anime aid="32" type="Sequel">
                     <title>Neon Genesis Evangelion: Death &amp; Rebirth</title>
                 </anime>
             </relatedanime>
-            
+
             <ratings>
                 <permanent count="12345">8.50</permanent>
                 <temporary count="6789">8.20</temporary>
             </ratings>
-            
+
             <similaranime>
                 <anime aid="33" approval="150" total="200">RahXephon</anime>
             </similaranime>
@@ -106,7 +107,9 @@ class TestBackwardCompatibilityRegression:
         assert details.creators[0].type == "Direction"
 
         assert len(details.related_anime) == 1
-        assert details.related_anime[0].title == "Neon Genesis Evangelion: Death & Rebirth"
+        assert (
+            details.related_anime[0].title == "Neon Genesis Evangelion: Death & Rebirth"
+        )
 
         assert details.ratings is not None
         assert details.ratings.permanent == 8.50
@@ -187,7 +190,9 @@ class TestBackwardCompatibilityRegression:
 
         # Test cases that should still raise ValidationError
         with pytest.raises(ValidationError):
-            AnimeDetails(aid=0, title="Test", type="TV", episode_count=12)  # Invalid aid
+            AnimeDetails(
+                aid=0, title="Test", type="TV", episode_count=12
+            )  # Invalid aid
 
         with pytest.raises(ValidationError):
             AnimeDetails(aid=123, title="", type="TV", episode_count=12)  # Empty title
@@ -196,7 +201,9 @@ class TestBackwardCompatibilityRegression:
             AnimeDetails(aid=123, title="Test", type="", episode_count=12)  # Empty type
 
         with pytest.raises(ValidationError):
-            AnimeDetails(aid=123, title="Test", type="TV", episode_count=-1)  # Negative episodes
+            AnimeDetails(
+                aid=123, title="Test", type="TV", episode_count=-1
+            )  # Negative episodes
 
     def test_serialization_deserialization_unchanged(self):
         """Test that model serialization/deserialization is unchanged."""
@@ -214,16 +221,34 @@ class TestBackwardCompatibilityRegression:
 
         # Should include all existing fields
         expected_keys = {
-            "aid", "title", "type", "episode_count", "start_date", "end_date",
-            "titles", "synopsis", "url", "creators", "related_anime", "restricted",
-            "ratings", "similar_anime", "picture"
+            "aid",
+            "title",
+            "type",
+            "episode_count",
+            "start_date",
+            "end_date",
+            "titles",
+            "synopsis",
+            "url",
+            "creators",
+            "related_anime",
+            "restricted",
+            "ratings",
+            "similar_anime",
+            "picture",
         }
-        
+
         for key in expected_keys:
             assert key in data
 
         # Should also include new enhanced fields
-        enhanced_keys = {"episodes", "resources", "characters", "tags", "recommendations"}
+        enhanced_keys = {
+            "episodes",
+            "resources",
+            "characters",
+            "tags",
+            "recommendations",
+        }
         for key in enhanced_keys:
             assert key in data
 
@@ -248,8 +273,11 @@ class TestBackwardCompatibilityRegression:
     def test_existing_helper_functions_unchanged(self):
         """Test that existing helper functions behavior is unchanged."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import (
-            _safe_get_text, _safe_get_int, _safe_get_date
+            _safe_get_date,
+            _safe_get_int,
+            _safe_get_text,
         )
 
         # Test _safe_get_text
@@ -270,9 +298,13 @@ class TestBackwardCompatibilityRegression:
     def test_existing_parsing_functions_unchanged(self):
         """Test that existing parsing functions behavior is unchanged."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import (
-            _parse_titles, _parse_creators, _parse_related_anime, 
-            _parse_ratings, _parse_similar_anime
+            _parse_creators,
+            _parse_ratings,
+            _parse_related_anime,
+            _parse_similar_anime,
+            _parse_titles,
         )
 
         xml = """
@@ -331,11 +363,11 @@ class TestBackwardCompatibilityRegression:
             <title>Performance Test Anime</title>
             <startdate>2023-01-01</startdate>
             <description>Performance test.</description>
-            
+
             <titles>
                 <title type="main" xml:lang="en">Performance Test Anime</title>
             </titles>
-            
+
             <creators>
                 <name id="123" type="Direction">Test Director</name>
             </creators>
@@ -349,7 +381,9 @@ class TestBackwardCompatibilityRegression:
         old_format_time = time.time() - start_time
 
         # Performance should be reasonable (less than 1 second for 100 parses)
-        assert old_format_time < 1.0, f"Old format parsing too slow: {old_format_time:.3f}s"
+        assert old_format_time < 1.0, (
+            f"Old format parsing too slow: {old_format_time:.3f}s"
+        )
 
         # Verify parsing still works correctly
         assert details.aid == 123
@@ -367,7 +401,6 @@ class TestBackwardCompatibilityRegression:
     def test_memory_usage_regression(self):
         """Test that enhanced parsing doesn't cause memory usage regression."""
         import gc
-        import sys
 
         # Create many AnimeDetails objects with old-style data
         objects = []

@@ -258,7 +258,7 @@ class MaintenanceScheduler:
 
                 # Get statistics
                 cursor = conn.execute("""
-                    SELECT name FROM sqlite_master 
+                    SELECT name FROM sqlite_master
                     WHERE type='table' AND name NOT LIKE 'sqlite_%'
                 """)
                 tables = [row[0] for row in cursor.fetchall()]
@@ -311,7 +311,7 @@ class MaintenanceScheduler:
 
                     # Count tables
                     cursor = conn.execute("""
-                        SELECT COUNT(*) FROM sqlite_master 
+                        SELECT COUNT(*) FROM sqlite_master
                         WHERE type='table' AND name NOT LIKE 'sqlite_%'
                     """)
                     health_info["table_count"] = cursor.fetchone()[0]

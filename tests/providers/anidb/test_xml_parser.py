@@ -1937,6 +1937,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_episodes_valid_data(self):
         """Test parsing valid episode data."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_episodes
 
         xml = """
@@ -1960,7 +1961,7 @@ class TestEnhancedParsingFunctions:
         episodes = _parse_episodes(root)
 
         assert len(episodes) == 2
-        
+
         # Check first episode
         ep1 = episodes[0]
         assert ep1.episode_number == 1
@@ -1980,6 +1981,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_episodes_no_container(self):
         """Test parsing episodes when no episodes container exists."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_episodes
 
         xml = "<anime><title>Test</title></anime>"
@@ -1991,6 +1993,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_episodes_missing_episode_number(self):
         """Test parsing episodes with missing episode numbers."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_episodes
 
         xml = """
@@ -2015,6 +2018,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_episodes_alternative_number_sources(self):
         """Test parsing episodes with alternative episode number sources."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_episodes
 
         xml = """
@@ -2040,6 +2044,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_resources_valid_data(self):
         """Test parsing valid resource data."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_resources
 
         xml = """
@@ -2080,6 +2085,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_resources_no_container(self):
         """Test parsing resources when no resources container exists."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_resources
 
         xml = "<anime><title>Test</title></anime>"
@@ -2091,6 +2097,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_resources_unknown_type(self):
         """Test parsing resources with unknown type."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_resources
 
         xml = """
@@ -2112,6 +2119,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_characters_valid_data(self):
         """Test parsing valid character data."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_characters
 
         xml = """
@@ -2161,6 +2169,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_characters_no_container(self):
         """Test parsing characters when no characters container exists."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_characters
 
         xml = "<anime><title>Test</title></anime>"
@@ -2172,6 +2181,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_characters_missing_name(self):
         """Test parsing characters with missing names."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_characters
 
         xml = """
@@ -2195,6 +2205,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_tags_valid_data(self):
         """Test parsing valid tag data."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_tags
 
         xml = """
@@ -2235,6 +2246,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_tags_no_container(self):
         """Test parsing tags when no tags container exists."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_tags
 
         xml = "<anime><title>Test</title></anime>"
@@ -2246,6 +2258,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_tags_missing_required_fields(self):
         """Test parsing tags with missing required fields."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_tags
 
         xml = """
@@ -2272,7 +2285,10 @@ class TestEnhancedParsingFunctions:
     def test_parse_recommendations_valid_data(self):
         """Test parsing valid recommendation data."""
         from lxml import etree
-        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_recommendations
+
+        from src.mcp_server_anime.providers.anidb.xml_parser import (
+            _parse_recommendations,
+        )
 
         xml = """
         <anime>
@@ -2304,7 +2320,10 @@ class TestEnhancedParsingFunctions:
     def test_parse_recommendations_no_container(self):
         """Test parsing recommendations when no recommendations container exists."""
         from lxml import etree
-        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_recommendations
+
+        from src.mcp_server_anime.providers.anidb.xml_parser import (
+            _parse_recommendations,
+        )
 
         xml = "<anime><title>Test</title></anime>"
         root = etree.fromstring(xml)
@@ -2315,7 +2334,10 @@ class TestEnhancedParsingFunctions:
     def test_parse_recommendations_missing_text(self):
         """Test parsing recommendations with missing text."""
         from lxml import etree
-        from src.mcp_server_anime.providers.anidb.xml_parser import _parse_recommendations
+
+        from src.mcp_server_anime.providers.anidb.xml_parser import (
+            _parse_recommendations,
+        )
 
         xml = """
         <anime>
@@ -2337,7 +2359,9 @@ class TestEnhancedParsingFunctions:
 
     def test_map_resource_type_to_platform(self):
         """Test resource type mapping function."""
-        from src.mcp_server_anime.providers.anidb.xml_parser import _map_resource_type_to_platform
+        from src.mcp_server_anime.providers.anidb.xml_parser import (
+            _map_resource_type_to_platform,
+        )
 
         # Test known mappings
         assert _map_resource_type_to_platform(1) == "MyAnimeList"
@@ -2351,6 +2375,7 @@ class TestEnhancedParsingFunctions:
     def test_parse_voice_actors_alternative_containers(self):
         """Test parsing voice actors with alternative container names."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import _parse_voice_actors
 
         xml = """
@@ -2371,9 +2396,13 @@ class TestEnhancedParsingFunctions:
     def test_enhanced_parsing_error_handling(self):
         """Test error handling in enhanced parsing functions."""
         from lxml import etree
+
         from src.mcp_server_anime.providers.anidb.xml_parser import (
-            _parse_episodes, _parse_resources, _parse_characters, 
-            _parse_tags, _parse_recommendations
+            _parse_characters,
+            _parse_episodes,
+            _parse_recommendations,
+            _parse_resources,
+            _parse_tags,
         )
 
         # Test with malformed XML that might cause parsing errors
@@ -2412,10 +2441,10 @@ class TestEnhancedParsingFunctions:
 
         assert episodes == []
         assert resources is None or (
-            len(resources.myanimelist) == 0 and 
-            len(resources.imdb) == 0 and 
-            len(resources.official_sites) == 0 and 
-            len(resources.other) == 0
+            len(resources.myanimelist) == 0
+            and len(resources.imdb) == 0
+            and len(resources.official_sites) == 0
+            and len(resources.other) == 0
         )
         # Characters with valid names should still be parsed even with invalid IDs
         assert len(characters) == 1
@@ -2437,7 +2466,7 @@ class TestEnhancedAnimeDetailsIntegration:
             <title>Enhanced Test Anime</title>
             <startdate>2023-01-01</startdate>
             <enddate>2023-03-31</enddate>
-            
+
             <episodes>
                 <episode id="1">
                     <title>First Episode</title>
@@ -2445,27 +2474,27 @@ class TestEnhancedAnimeDetailsIntegration:
                     <length>24</length>
                 </episode>
             </episodes>
-            
+
             <resources>
                 <resource type="1" externalentity="12345">
                     MyAnimeList Entry
                 </resource>
             </resources>
-            
+
             <characters>
                 <character id="123">
                     <name>Main Character</name>
                     <description>The protagonist.</description>
                 </character>
             </characters>
-            
+
             <tags>
                 <tag id="456" weight="500">
                     <name>Action</name>
                     <description>Action scenes.</description>
                 </tag>
             </tags>
-            
+
             <recommendations>
                 <recommendation type="Must See">
                     <text>Great anime!</text>
@@ -2504,7 +2533,7 @@ class TestEnhancedAnimeDetailsIntegration:
             <type>TV Series</type>
             <episodecount>12</episodecount>
             <title>Test Anime</title>
-            
+
             <!-- Malformed enhanced sections that should be skipped -->
             <episodes>
                 <episode>
@@ -2512,7 +2541,7 @@ class TestEnhancedAnimeDetailsIntegration:
                     <title>Bad Episode</title>
                 </episode>
             </episodes>
-            
+
             <characters>
                 <character>
                     <!-- Missing required character name -->

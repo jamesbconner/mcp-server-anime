@@ -273,7 +273,9 @@ def parse_anime_details(xml_content: str) -> AnimeDetails:
         raise XMLParsingError("No anime element found in XML")
 
     # Extract required fields
-    aid_str = anime_elem.get("aid") or anime_elem.get("id")  # AniDB uses 'id' attribute in HTTP API
+    aid_str = anime_elem.get("aid") or anime_elem.get(
+        "id"
+    )  # AniDB uses 'id' attribute in HTTP API
     if not aid_str:
         raise XMLParsingError("Anime element missing required 'aid' or 'id' attribute")
 
@@ -380,8 +382,10 @@ def parse_anime_details(xml_content: str) -> AnimeDetails:
         resources = _parse_resources(anime_elem)
         if resources:
             total_resources = (
-                len(resources.myanimelist) + len(resources.imdb) + 
-                len(resources.official_sites) + len(resources.other)
+                len(resources.myanimelist)
+                + len(resources.imdb)
+                + len(resources.official_sites)
+                + len(resources.other)
             )
             logger.debug(f"Parsed {total_resources} resources for anime {aid}")
     except Exception as e:
@@ -463,7 +467,9 @@ def _parse_titles(anime_elem: etree._Element) -> list[AnimeTitle]:
             # Extract attributes
             title_type = title_elem.get("type", "unknown")
             # Try both xml:lang and lang attributes
-            language = title_elem.get("{http://www.w3.org/XML/1998/namespace}lang") or title_elem.get("lang", "unknown")
+            language = title_elem.get(
+                "{http://www.w3.org/XML/1998/namespace}lang"
+            ) or title_elem.get("lang", "unknown")
 
             # Normalize title type
             if title_type.lower() in ("main", "primary"):
@@ -955,7 +961,7 @@ def _parse_resources(anime_elem: etree._Element) -> AnimeResources | None:
 
             # Map resource type to platform and create resource object
             platform_name = _map_resource_type_to_platform(resource_type_id)
-            
+
             resource_obj = ExternalResource(
                 type=platform_name,
                 identifier=identifier,
@@ -1010,7 +1016,7 @@ def _map_resource_type_to_platform(resource_type_id: int) -> str:
         43: "IMDB",
         44: "The Movie Database",
     }
-    
+
     return resource_type_mapping.get(resource_type_id, f"Unknown ({resource_type_id})")
 
 
@@ -1064,7 +1070,9 @@ def _parse_characters(anime_elem: etree._Element) -> list[AnimeCharacter]:
             type_elem = char_elem.find("charactertype")
             if type_elem is None:
                 type_elem = char_elem.find("type")
-            character_type = _safe_get_text(type_elem) if type_elem is not None else None
+            character_type = (
+                _safe_get_text(type_elem) if type_elem is not None else None
+            )
             if character_type == "":
                 character_type = None
 
@@ -1212,11 +1220,19 @@ def _parse_tags(anime_elem: etree._Element) -> list[AnimeTag]:
 
             # Extract spoiler flag
             spoiler_str = tag_elem.get("spoiler")
-            spoiler = spoiler_str is not None and spoiler_str.lower() in ("true", "1", "yes")
+            spoiler = spoiler_str is not None and spoiler_str.lower() in (
+                "true",
+                "1",
+                "yes",
+            )
 
             # Extract verified flag
             verified_str = tag_elem.get("verified")
-            verified = verified_str is not None and verified_str.lower() in ("true", "1", "yes")
+            verified = verified_str is not None and verified_str.lower() in (
+                "true",
+                "1",
+                "yes",
+            )
 
             # Extract parent tag ID
             parent_id_str = tag_elem.get("parentid")

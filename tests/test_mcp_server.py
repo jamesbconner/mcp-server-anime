@@ -120,15 +120,14 @@ class TestMCPServerIntegration:
     async def test_run_server_keyboard_interrupt(self) -> None:
         """Test run_server handles keyboard interrupt gracefully."""
         with patch("src.mcp_server_anime.server.create_server") as mock_create:
-            with patch("src.mcp_server_anime.server.stdio_server") as mock_stdio:
-                mock_server = MagicMock()
-                mock_create.return_value = mock_server
+            mock_server = MagicMock()
+            mock_create.return_value = mock_server
 
-                # Mock stdio_server to raise KeyboardInterrupt
-                mock_stdio.return_value.__aenter__.side_effect = KeyboardInterrupt()
+            # Mock run_stdio_async to raise KeyboardInterrupt
+            mock_server.run_stdio_async = AsyncMock(side_effect=KeyboardInterrupt())
 
-                # Should not raise an exception
-                await run_server()
+            # Should not raise an exception (KeyboardInterrupt is caught)
+            await run_server()
 
     @pytest.mark.asyncio
     async def test_run_server_service_error(self) -> None:

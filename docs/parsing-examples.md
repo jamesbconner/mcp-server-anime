@@ -67,17 +67,17 @@ if resources:
         for mal_entry in resources['myanimelist']:
             print(f"MyAnimeList: {mal_entry['url']}")
             print(f"  ID: {mal_entry['identifier']}")
-    
+
     # IMDB links
     if resources['imdb']:
         for imdb_entry in resources['imdb']:
             print(f"IMDB: {imdb_entry['identifier']}")
-    
+
     # Official sites
     if resources['official_sites']:
         for site in resources['official_sites']:
             print(f"Official Site: {site['url']}")
-    
+
     # Other resources
     if resources['other']:
         for other in resources['other']:
@@ -129,7 +129,7 @@ for character in characters:
         print(f"  Description: {character['description'][:100]}...")
     if character['character_type']:
         print(f"  Type: {character['character_type']}")
-    
+
     # Voice actors
     if character['voice_actors']:
         print("  Voice Actors:")
@@ -178,7 +178,7 @@ for tag in tags[:10]:  # Show top 10 tags
     weight_info = f" (weight: {tag['weight']})" if tag['weight'] else ""
     spoiler_info = " [SPOILER]" if tag['spoiler'] else ""
     verified_info = " ✓" if tag['verified'] else ""
-    
+
     print(f"  {tag['name']}{weight_info}{spoiler_info}{verified_info}")
     if tag['description']:
         print(f"    {tag['description']}")
@@ -260,20 +260,20 @@ recommendation = {
 async def analyze_anime(aid: int):
     """Comprehensive analysis of an anime using enhanced data."""
     details = await anidb_details(aid)
-    
+
     print(f"=== {details['title']} ===")
     print(f"Type: {details['type']} | Episodes: {details['episode_count']}")
-    
+
     if details['start_date']:
         print(f"Aired: {details['start_date'][:10]}", end="")
         if details['end_date']:
             print(f" to {details['end_date'][:10]}")
         else:
             print(" (ongoing)")
-    
+
     if details['synopsis']:
         print(f"\nSynopsis: {details['synopsis'][:200]}...")
-    
+
     # Episode analysis
     episodes = details['episodes']
     if episodes:
@@ -281,14 +281,14 @@ async def analyze_anime(aid: int):
         avg_length = sum(ep['length'] for ep in episodes if ep['length']) / len([ep for ep in episodes if ep['length']])
         if avg_length:
             print(f"Average episode length: {avg_length:.0f} minutes")
-    
+
     # Character analysis
     characters = details['characters']
     if characters:
         print(f"\n👥 Characters: {len(characters)} characters")
         main_chars = [c for c in characters if c['character_type'] == 'Main']
         print(f"Main characters: {len(main_chars)}")
-        
+
         # Voice actor languages
         languages = set()
         for char in characters:
@@ -297,18 +297,18 @@ async def analyze_anime(aid: int):
                     languages.add(va['language'])
         if languages:
             print(f"Voice acting languages: {', '.join(sorted(languages))}")
-    
+
     # Tag analysis
     tags = details['tags']
     if tags:
         print(f"\n🏷️  Tags: {len(tags)} tags")
         high_weight_tags = [tag for tag in tags if tag['weight'] and tag['weight'] >= 400]
         print(f"High relevance tags: {', '.join(tag['name'] for tag in high_weight_tags[:5])}")
-        
+
         spoiler_count = sum(1 for tag in tags if tag['spoiler'])
         if spoiler_count:
             print(f"Spoiler tags: {spoiler_count}")
-    
+
     # External resources
     resources = details['resources']
     if resources:
@@ -319,7 +319,7 @@ async def analyze_anime(aid: int):
             print(f"  IMDB: {resources['imdb'][0]['identifier']}")
         if resources['official_sites']:
             print(f"  Official sites: {len(resources['official_sites'])}")
-    
+
     # Recommendation summary
     recommendations = details['recommendations']
     if recommendations:

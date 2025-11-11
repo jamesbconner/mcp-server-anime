@@ -97,12 +97,12 @@ logger = get_logger(__name__)
 
 class YourProvider(AnimeDataProvider):
     """Your Provider implementation."""
-    
+
     def __init__(self, config: YourProviderConfig):
         self.config = config
         self.service = YourProviderService(config)
         self._initialized = False
-    
+
     @property
     def info(self) -> ProviderInfo:
         """Get provider information."""
@@ -117,44 +117,44 @@ class YourProvider(AnimeDataProvider):
                 # Add other capabilities as needed
             )
         )
-    
+
     async def initialize(self) -> None:
         """Initialize the provider."""
         if self._initialized:
             return
-        
+
         await self.service.initialize()
         self._initialized = True
         logger.info("Your Provider initialized successfully")
-    
+
     async def cleanup(self) -> None:
         """Clean up provider resources."""
         if not self._initialized:
             return
-        
+
         await self.service.cleanup()
         self._initialized = False
         logger.info("Your Provider cleaned up")
-    
+
     async def health_check(self) -> bool:
         """Check provider health."""
         if not self._initialized:
             return False
-        
+
         return await self.service.health_check()
-    
+
     async def search_anime(self, query: str, limit: int = 10) -> list[AnimeSearchResult]:
         """Search for anime by title."""
         if not self._initialized:
             raise RuntimeError("Provider not initialized")
-        
+
         return await self.service.search_anime(query, limit)
-    
+
     async def get_anime_details(self, anime_id: int) -> AnimeDetails:
         """Get detailed anime information."""
         if not self._initialized:
             raise RuntimeError("Provider not initialized")
-        
+
         return await self.service.get_anime_details(anime_id)
 
 def create_your_provider(config: Optional[YourProviderConfig] = None) -> YourProvider:
@@ -177,7 +177,7 @@ from pydantic import BaseModel, Field
 
 class YourProviderConfig(BaseModel):
     """Configuration for Your Provider."""
-    
+
     # API configuration
     api_key: Optional[str] = Field(
         default=None,
@@ -187,7 +187,7 @@ class YourProviderConfig(BaseModel):
         default="https://api.yourprovider.com",
         description="Base URL for Your Provider API"
     )
-    
+
     # Rate limiting
     rate_limit_delay: float = Field(
         default=1.0,
@@ -197,13 +197,13 @@ class YourProviderConfig(BaseModel):
         default=3,
         description="Maximum number of retry attempts"
     )
-    
+
     # Caching
     cache_ttl: int = Field(
         default=3600,
         description="Cache TTL in seconds"
     )
-    
+
     @classmethod
     def from_env(cls) -> "YourProviderConfig":
         """Load configuration from environment variables."""
@@ -241,26 +241,26 @@ logger = get_logger(__name__)
 
 class YourProviderService:
     """Service for interacting with Your Provider API."""
-    
+
     def __init__(self, config: YourProviderConfig):
         self.config = config
         self.cache = TTLCache(default_ttl=config.cache_ttl)
-        
+
         # Set up HTTP client with rate limiting
         rate_limiter = RateLimiter(delay=config.rate_limit_delay)
         retry_config = RetryConfig(max_retries=config.max_retries)
         self.http_client = HTTPClient(rate_limiter, retry_config)
-    
+
     async def initialize(self) -> None:
         """Initialize the service."""
         # Perform any initialization tasks
         logger.info("Your Provider service initialized")
-    
+
     async def cleanup(self) -> None:
         """Clean up service resources."""
         await self.http_client.close()
         logger.info("Your Provider service cleaned up")
-    
+
     async def health_check(self) -> bool:
         """Check service health."""
         try:
@@ -270,17 +270,17 @@ class YourProviderService:
         except Exception as e:
             logger.warning(f"Health check failed: {e}")
             return False
-    
+
     @with_error_handling(fallback_value=[])
     async def search_anime(self, query: str, limit: int = 10) -> List[AnimeSearchResult]:
         """Search for anime by title."""
         cache_key = generate_cache_key("search", query=query, limit=limit)
-        
+
         # Check cache first
         cached_result = await self.cache.get(cache_key)
         if cached_result is not None:
             return cached_result
-        
+
         # Make API request
         params = {
             "q": query,
@@ -288,54 +288,54 @@ class YourProviderService:
         }
         if self.config.api_key:
             params["api_key"] = self.config.api_key
-        
+
         response = await self.http_client.get(
             f"{self.config.base_url}/search",
             params=params
         )
-        
+
         if response.status_code != 200:
             raise APIError(f"Search failed: {response.status_code}")
-        
+
         data = response.json()
         results = [self._parse_search_result(item) for item in data.get("results", [])]
-        
+
         # Cache results
         await self.cache.set(cache_key, results)
-        
+
         return results
-    
+
     @with_error_handling(fallback_value=None)
     async def get_anime_details(self, anime_id: int) -> AnimeDetails:
         """Get detailed anime information."""
         cache_key = generate_cache_key("details", anime_id=anime_id)
-        
+
         # Check cache first
         cached_result = await self.cache.get(cache_key)
         if cached_result is not None:
             return cached_result
-        
+
         # Make API request
         params = {}
         if self.config.api_key:
             params["api_key"] = self.config.api_key
-        
+
         response = await self.http_client.get(
             f"{self.config.base_url}/anime/{anime_id}",
             params=params
         )
-        
+
         if response.status_code != 200:
             raise APIError(f"Details request failed: {response.status_code}")
-        
+
         data = response.json()
         result = self._parse_anime_details(data)
-        
+
         # Cache result
         await self.cache.set(cache_key, result)
-        
+
         return result
-    
+
     def _parse_search_result(self, data: Dict[str, Any]) -> AnimeSearchResult:
         """Parse search result from API response."""
         return AnimeSearchResult(
@@ -344,7 +344,7 @@ class YourProviderService:
             type=data.get("type", "Unknown"),
             year=data.get("year"),
         )
-    
+
     def _parse_anime_details(self, data: Dict[str, Any]) -> AnimeDetails:
         """Parse anime details from API response."""
         return AnimeDetails(
@@ -373,7 +373,7 @@ from .config import YourProviderConfig, load_config
 __all__ = [
     "YourProvider",
     "create_your_provider",
-    "YourProviderService", 
+    "YourProviderService",
     "YourProviderConfig",
     "load_config",
 ]
@@ -416,7 +416,7 @@ from src.mcp_server_anime.core.models import AnimeSearchResult, AnimeDetails
 
 class TestYourProvider:
     """Test Your Provider implementation."""
-    
+
     @pytest.fixture
     def config(self):
         """Create test configuration."""
@@ -424,18 +424,18 @@ class TestYourProvider:
             api_key="test_key",
             base_url="https://test.api.com",
         )
-    
+
     @pytest.fixture
     def provider(self, config):
         """Create test provider."""
         return YourProvider(config)
-    
+
     @pytest.mark.asyncio
     async def test_initialize(self, provider):
         """Test provider initialization."""
         await provider.initialize()
         assert provider._initialized is True
-    
+
     @pytest.mark.asyncio
     async def test_search_anime(self, provider):
         """Test anime search."""
@@ -443,13 +443,13 @@ class TestYourProvider:
         provider.service.search_anime = AsyncMock(return_value=[
             AnimeSearchResult(aid=1, title="Test Anime", type="TV", year=2023)
         ])
-        
+
         await provider.initialize()
         results = await provider.search_anime("test", limit=5)
-        
+
         assert len(results) == 1
         assert results[0].title == "Test Anime"
-    
+
     # Add more tests as needed
 ```
 

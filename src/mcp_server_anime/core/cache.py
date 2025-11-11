@@ -284,7 +284,7 @@ def generate_cache_key(method: str, **params: Any) -> str:
     Creates a deterministic cache key by combining the method name with
     a hash of the sorted parameters. This ensures that identical requests
     produce the same cache key regardless of parameter order.
-    
+
     Note: MD5 is used for cache key generation only (non-cryptographic purpose).
     This is safe as cache keys don't require cryptographic security.
 
@@ -307,7 +307,9 @@ def generate_cache_key(method: str, **params: Any) -> str:
     params_json = json.dumps(sorted_params, sort_keys=True, separators=(",", ":"))
 
     # Generate hash of the parameters (MD5 used for non-cryptographic cache key generation)
-    params_hash = hashlib.md5(params_json.encode("utf-8"), usedforsecurity=False).hexdigest()[:16]
+    params_hash = hashlib.md5(
+        params_json.encode("utf-8"), usedforsecurity=False
+    ).hexdigest()[:16]
 
     # Combine method name with parameter hash
     cache_key = f"{method}:{params_hash}"

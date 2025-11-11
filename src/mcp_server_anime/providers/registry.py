@@ -98,7 +98,7 @@ class ProviderRegistry:
         if provider.is_initialized:
             # Create cleanup task and store reference to prevent garbage collection
             cleanup_task = asyncio.create_task(provider.cleanup())
-            
+
             # Add error handling callback
             def cleanup_done_callback(task: asyncio.Task) -> None:
                 try:
@@ -113,16 +113,16 @@ class ProviderRegistry:
                         provider_name=provider_name,
                         error=str(e),
                     )
-            
+
             cleanup_task.add_done_callback(cleanup_done_callback)
-            
+
             # Store task reference to prevent garbage collection
             self._cleanup_tasks.add(cleanup_task)
-            
+
             # Remove task from set when done to prevent memory leaks
             def remove_task_callback(task: asyncio.Task) -> None:
                 self._cleanup_tasks.discard(task)
-            
+
             cleanup_task.add_done_callback(remove_task_callback)
 
         # Remove from all tracking structures
@@ -344,7 +344,9 @@ class ProviderRegistry:
 
         # Wait for any pending cleanup tasks from unregister_provider
         if self._cleanup_tasks:
-            logger.debug(f"Waiting for {len(self._cleanup_tasks)} pending cleanup tasks")
+            logger.debug(
+                f"Waiting for {len(self._cleanup_tasks)} pending cleanup tasks"
+            )
             await asyncio.gather(*self._cleanup_tasks, return_exceptions=True)
             self._cleanup_tasks.clear()
 

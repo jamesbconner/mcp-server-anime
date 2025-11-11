@@ -9,6 +9,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
+from src.mcp_server_anime.core.exceptions import APIError
 from src.mcp_server_anime.core.models import (
     AnimeCharacter,
     AnimeCreator,
@@ -19,7 +20,6 @@ from src.mcp_server_anime.core.models import (
     AnimeSearchResult,
     AnimeTag,
     AnimeTitle,
-    APIError,
     ExternalResource,
     RelatedAnime,
     VoiceActor,

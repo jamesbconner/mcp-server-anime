@@ -108,7 +108,7 @@ class HTTPClient:
         }
         if headers:
             default_headers.update(headers)
-            
+
         self._client = httpx.AsyncClient(
             timeout=httpx.Timeout(
                 connect=10.0,  # Connection timeout

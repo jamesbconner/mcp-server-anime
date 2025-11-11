@@ -10,7 +10,6 @@ from typing import Any
 from urllib.parse import urljoin
 
 from ...core.cache import generate_cache_key
-from ...core.persistent_cache import PersistentCache, create_persistent_cache
 from ...core.error_handler import with_error_handling, with_retry
 from ...core.exceptions import (
     APIError,
@@ -18,7 +17,6 @@ from ...core.exceptions import (
     ServiceError,
     XMLParsingError,
 )
-from ...core.security import ensure_not_none
 from ...core.http_client import HTTPClient, create_http_client
 from ...core.logging_config import (
     get_logger,
@@ -27,6 +25,8 @@ from ...core.logging_config import (
     set_request_context,
 )
 from ...core.models import AnimeDetails, AnimeSearchResult
+from ...core.persistent_cache import PersistentCache, create_persistent_cache
+from ...core.security import ensure_not_none
 from .config import AniDBConfig, load_config
 from .search_service import get_search_service
 from .xml_parser import parse_anime_details
@@ -90,7 +90,7 @@ class AniDBService:
                 db_path=self.config.cache_db_path,
                 memory_ttl=float(self.config.cache_ttl),
                 persistent_ttl=float(self.config.persistent_cache_ttl),
-                max_memory_size=self.config.memory_cache_size
+                max_memory_size=self.config.memory_cache_size,
             )
             logger.debug(
                 f"Persistent cache initialized with memory_ttl={self.config.cache_ttl}s, "
@@ -407,17 +407,17 @@ class AniDBService:
             xml_content = response.text
             content_length = len(xml_content) if xml_content else 0
             content_encoding = response.headers.get("content-encoding", "none")
-            
+
             logger.debug(
                 f"API Response details - Status: {response.status_code}, "
                 f"Content-Length: {content_length}, "
                 f"Content-Encoding: {content_encoding}, "
                 f"Headers: {dict(response.headers)}"
             )
-            
+
             if content_length > 0:
                 logger.debug(f"Response content preview: {xml_content[:500]}...")
-            
+
             if not xml_content:
                 raise APIError(
                     "Received empty response from API",
@@ -428,7 +428,7 @@ class AniDBService:
 
             # Check for API error responses in XML
             xml_lower = xml_content.lower()
-            
+
             # Check for specific error patterns (not just any occurrence of "error")
             if (
                 "no such anime" in xml_lower
@@ -449,7 +449,7 @@ class AniDBService:
             elif "invalid request" in xml_lower or "invalid client" in xml_lower:
                 raise APIError(
                     f"Invalid request or client not registered: {aid}",
-                    code="INVALID_REQUEST", 
+                    code="INVALID_REQUEST",
                     response_body=xml_content[:1000],
                 )
             elif xml_content.strip().startswith("<?xml") and "<error" in xml_lower:

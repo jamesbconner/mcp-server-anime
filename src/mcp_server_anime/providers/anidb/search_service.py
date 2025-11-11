@@ -9,9 +9,9 @@ from datetime import datetime
 
 from ...core.exceptions import DatabaseError, ServiceError
 from ...core.logging_config import get_logger
-from ...core.security import SecurityLogger
 from ...core.models import AnimeSearchResult
 from ...core.multi_provider_db import get_multi_provider_database
+from ...core.security import SecurityLogger
 from ...core.transaction_logger import log_search_transaction
 from .titles_downloader import TitlesDownloader
 
@@ -99,14 +99,16 @@ class AniDBSearchService:
                 except Exception as fallback_error:
                     # Log the fallback database check failure but continue
                     SecurityLogger.log_exception_with_context(
-                        fallback_error, 
+                        fallback_error,
                         {
-                            "operation": "fallback_database_check", 
+                            "operation": "fallback_database_check",
                             "provider": self.provider_name,
-                            "original_error": str(e)
-                        }
+                            "original_error": str(e),
+                        },
                     )
-                    logger.debug(f"Could not check existing database stats: {fallback_error}")
+                    logger.debug(
+                        f"Could not check existing database stats: {fallback_error}"
+                    )
                 return False
 
     async def search_anime(

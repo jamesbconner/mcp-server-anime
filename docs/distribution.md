@@ -280,12 +280,12 @@ Optimized for discoverability:
 
 ```toml
 keywords = [
-    "mcp", 
-    "anime", 
-    "anidb", 
-    "api", 
-    "server", 
-    "model-context-protocol", 
+    "mcp",
+    "anime",
+    "anidb",
+    "api",
+    "server",
+    "model-context-protocol",
     "kiro"
 ]
 ```

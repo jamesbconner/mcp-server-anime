@@ -465,9 +465,15 @@ class LocalDatabaseIntegrationConfig(BaseModel):
         except Exception as e:
             # Log disk space check errors but continue validation
             SecurityLogger.log_exception_with_context(
-                e, {"operation": "disk_space_check", "db_path": str(self.database.database_path)}
+                e,
+                {
+                    "operation": "disk_space_check",
+                    "db_path": str(self.database.database_path),
+                },
             )
-            logger.debug(f"Could not check disk space for {self.database.database_path}: {e}")
+            logger.debug(
+                f"Could not check disk space for {self.database.database_path}: {e}"
+            )
 
         # Validate memory requirements
         cache_memory_mb = self.database.cache_size_mb

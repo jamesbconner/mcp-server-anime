@@ -53,10 +53,10 @@ from .models import (
     RelatedAnime,
 )
 from .security import (
+    SecureQueryHelper,
     SecurityConfig,
     SecurityLogger,
     SecurityValidationError,
-    SecureQueryHelper,
     TableNameValidator,
     ValidationError,
     ensure_condition,

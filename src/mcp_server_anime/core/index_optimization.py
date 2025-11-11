@@ -166,16 +166,22 @@ class IndexOptimizer:
                     prefix_query, prefix_params = SecureQueryHelper.build_count_query(
                         titles_table, "title_normalized LIKE ?"
                     )
-                    cursor = conn.execute(prefix_query, [f"{query_lower}%"] + prefix_params)
+                    cursor = conn.execute(
+                        prefix_query, [f"{query_lower}%"] + prefix_params
+                    )
                     prefix_count = cursor.fetchone()[0]
                     prefix_time = (datetime.now() - start_time).total_seconds() * 1000
 
                     # Test substring match query using secure query helper
                     start_time = datetime.now()
-                    substring_query, substring_params = SecureQueryHelper.build_count_query(
-                        titles_table, "title_normalized LIKE ?"
+                    substring_query, substring_params = (
+                        SecureQueryHelper.build_count_query(
+                            titles_table, "title_normalized LIKE ?"
+                        )
                     )
-                    cursor = conn.execute(substring_query, [f"%{query_lower}%"] + substring_params)
+                    cursor = conn.execute(
+                        substring_query, [f"%{query_lower}%"] + substring_params
+                    )
                     substring_count = cursor.fetchone()[0]
                     substring_time = (
                         datetime.now() - start_time
@@ -332,7 +338,7 @@ class IndexOptimizer:
                 "expected_index": f"idx_{provider_name}_titles_normalized",
             },
             {
-                "name": "prefix_match_normalized", 
+                "name": "prefix_match_normalized",
                 "query": f"SELECT aid, title FROM {titles_table} WHERE title_normalized LIKE ?",
                 "params": ["eva%"],
                 "expected_index": f"idx_{provider_name}_titles_normalized",
@@ -370,10 +376,8 @@ class IndexOptimizer:
                         full_query = full_query.replace("?", f"'{param}'", 1)
                     else:
                         full_query = full_query.replace("?", str(param), 1)
-                
-                analysis = self.analyze_query_performance(
-                    provider_name, full_query
-                )
+
+                analysis = self.analyze_query_performance(provider_name, full_query)
 
                 # Check if expected index is mentioned in query plan
                 uses_expected_index = any(

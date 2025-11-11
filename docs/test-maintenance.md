@@ -208,20 +208,20 @@ class TestIntegration:
     async def test_with_api_mocks(self, service):
         # Set up comprehensive mocks
         setup_common_mocks()
-        
+
         # Mock the HTTP client
         with patch('src.mcp_server_anime.http_client.HTTPClient.get') as mock_get:
             async def mock_get_response(url: str, params: dict = None, **kwargs):
                 mock_response = await mock_http_get(url, params, **kwargs)
-                
+
                 response = AsyncMock()
                 response.status_code = mock_response.status_code
                 response.text = mock_response.content
                 response.headers = mock_response.headers
                 return response
-            
+
             mock_get.side_effect = mock_get_response
-            
+
             # Test code here
             result = await service.search_anime("test query")
             assert len(result) > 0
@@ -245,7 +245,7 @@ class TestWithMocks:
             # Test code
             pass
         # Mock is automatically cleaned up here
-    
+
     @patch('module.function')
     def test_with_decorator(self, mock_func):
         # Test code
@@ -259,7 +259,7 @@ class TestWithMocks:
 
 **Problem**: Tests fail with "Circuit breaker is active" errors.
 
-**Solution**: 
+**Solution**:
 1. Use the `isolated_test_environment` fixture
 2. Reset circuit breakers manually if needed:
 

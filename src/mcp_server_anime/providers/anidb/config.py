@@ -63,25 +63,24 @@ class AniDBConfig(BaseModel):
     cache_ttl: int = Field(
         default=3600, ge=60, description="Cache time-to-live in seconds (must be >= 60)"
     )
-    
+
     # Persistent cache settings
     persistent_cache_enabled: bool = Field(
-        default=True, 
-        description="Enable persistent SQLite cache"
+        default=True, description="Enable persistent SQLite cache"
     )
     persistent_cache_ttl: int = Field(
         default=172800,  # 48 hours
         ge=3600,  # Minimum 1 hour
-        description="Persistent cache TTL in seconds (minimum 1 hour)"
+        description="Persistent cache TTL in seconds (minimum 1 hour)",
     )
     cache_db_path: str | None = Field(
         default=None,
-        description="Custom path for cache database file (uses default if None)"
+        description="Custom path for cache database file (uses default if None)",
     )
     memory_cache_size: int = Field(
         default=1000,
         ge=100,
-        description="Maximum entries in memory cache (minimum 100)"
+        description="Maximum entries in memory cache (minimum 100)",
     )
 
     # HTTP client settings
@@ -214,7 +213,12 @@ class AniDBConfig(BaseModel):
                         env_values[field_name] = float(env_value)
                     elif field_type is bool:
                         # Handle boolean conversion from string
-                        env_values[field_name] = env_value.lower() in ("true", "1", "yes", "on")
+                        env_values[field_name] = env_value.lower() in (
+                            "true",
+                            "1",
+                            "yes",
+                            "on",
+                        )
                 except (ValueError, TypeError) as e:
                     raise ValueError(
                         f"Invalid value for {env_var_name}: {env_value}. "

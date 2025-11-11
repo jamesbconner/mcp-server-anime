@@ -74,7 +74,7 @@ The caching system provides TTL-based caching with automatic cleanup and usage a
 ```python
 class TTLCache:
     """Thread-safe TTL cache with automatic cleanup."""
-    
+
     def __init__(self, default_ttl: int = 3600, max_size: int = 1000):
         self.default_ttl = default_ttl
         self.max_size = max_size
@@ -98,7 +98,7 @@ Rate-limited HTTP client with retry logic:
 ```python
 class HTTPClient:
     """HTTP client with rate limiting and retry logic."""
-    
+
     def __init__(self, rate_limiter: RateLimiter, retry_config: RetryConfig):
         self.rate_limiter = rate_limiter
         self.retry_config = retry_config
@@ -119,7 +119,7 @@ Comprehensive error handling with circuit breaker pattern:
 ```python
 class ErrorHandler:
     """Centralized error handling with circuit breaker pattern."""
-    
+
     def __init__(self, failure_threshold: int = 5, recovery_timeout: int = 60):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
@@ -173,27 +173,27 @@ All providers must implement the `AnimeDataProvider` interface:
 ```python
 class AnimeDataProvider(ABC):
     """Abstract base class for anime data providers."""
-    
+
     @abstractmethod
     async def search_anime(self, query: str, limit: int) -> list[AnimeSearchResult]:
         """Search for anime by title."""
         pass
-    
+
     @abstractmethod
     async def get_anime_details(self, anime_id: int) -> AnimeDetails:
         """Get detailed anime information."""
         pass
-    
+
     @abstractmethod
     async def initialize(self) -> None:
         """Initialize the provider."""
         pass
-    
+
     @abstractmethod
     async def cleanup(self) -> None:
         """Clean up provider resources."""
         pass
-    
+
     @abstractmethod
     async def health_check(self) -> bool:
         """Check provider health."""
@@ -207,16 +207,16 @@ Manages provider lifecycle and discovery:
 ```python
 class ProviderRegistry:
     """Registry for managing anime data providers."""
-    
+
     def __init__(self):
         self._providers: dict[str, AnimeDataProvider] = {}
         self._provider_configs: dict[str, ProviderConfig] = {}
         self._health_status: dict[str, bool] = {}
-    
+
     def register_provider(self, name: str, provider: AnimeDataProvider) -> None:
         """Register a new provider."""
         pass
-    
+
     def get_enabled_providers(self) -> list[AnimeDataProvider]:
         """Get all enabled and healthy providers."""
         pass
@@ -236,11 +236,11 @@ Full-featured AniDB implementation:
 ```python
 class AniDBProvider(AnimeDataProvider):
     """AniDB provider implementation."""
-    
+
     def __init__(self, config: AniDBConfig):
         self.config = config
         self.service = AniDBService(config)
-    
+
     async def search_anime(self, query: str, limit: int) -> list[AnimeSearchResult]:
         """Search anime using AniDB API."""
         return await self.service.search_anime(query, limit)
@@ -263,11 +263,11 @@ Server-wide settings and environment management:
 ```python
 class ServerConfig(BaseModel):
     """Global server configuration."""
-    
+
     log_level: str = "INFO"
     port: int = 8000
     host: str = "localhost"
-    
+
     @classmethod
     def load_from_env(cls) -> "ServerConfig":
         """Load configuration from environment variables."""
@@ -281,7 +281,7 @@ Provider-specific settings with validation:
 ```python
 class ProviderConfig(BaseModel):
     """Base provider configuration."""
-    
+
     enabled: bool = True
     priority: int = 100
     timeout: int = 30
@@ -289,7 +289,7 @@ class ProviderConfig(BaseModel):
 
 class ProvidersConfig(BaseModel):
     """Configuration for all providers."""
-    
+
     anidb: AniDBConfig = Field(default_factory=AniDBConfig)
     # Future: anilist, mal, etc.
 ```
@@ -303,7 +303,7 @@ Automatic tool generation from provider capabilities:
 ```python
 def register_provider_tools(server: FastMCP, provider: AnimeDataProvider) -> None:
     """Register MCP tools for a provider."""
-    
+
     @server.tool()
     async def anime_search(query: str, limit: int = 10) -> dict[str, Any]:
         """Search for anime by title."""

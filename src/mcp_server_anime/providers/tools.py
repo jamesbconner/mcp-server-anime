@@ -127,17 +127,17 @@ def create_search_tool(
     @mcp.tool(name=tool_name)
     async def provider_search_tool(query: str, limit: int = 10) -> list[dict[str, Any]]:
         f"""Search for anime by title using {display_name}.
-        
+
         Search the {display_name} database for anime matching the provided query string.
         Returns basic information about matching anime including title, type, and year.
-        
+
         Args:
             query: Search term for anime title (minimum {min_length} characters)
             limit: Maximum number of results to return (default: 10, max: {max_results})
-            
+
         Returns:
             List of anime search results with basic information
-            
+
         Raises:
             ValueError: If query is too short or limit is invalid
             RuntimeError: If the API request fails
@@ -235,16 +235,16 @@ def create_details_tool(
     @mcp.tool(name=tool_name)
     async def provider_details_tool(anime_id: str) -> dict[str, Any]:
         f"""Get detailed information about a specific anime from {display_name}.
-        
+
         Retrieve comprehensive anime data from {display_name} including synopsis, ratings,
         episode count, air dates, creators, and related anime information.
-        
+
         Args:
             anime_id: Unique anime identifier for {display_name}
-            
+
         Returns:
             Dictionary containing detailed anime information
-            
+
         Raises:
             ValueError: If anime ID is invalid
             RuntimeError: If the API request fails or anime is not found
@@ -314,14 +314,14 @@ def create_recommendations_tool(
         anime_id: str, limit: int = 10
     ) -> list[dict[str, Any]]:
         f"""Get anime recommendations based on a specific anime from {display_name}.
-        
+
         Args:
             anime_id: Unique anime identifier for {display_name}
             limit: Maximum number of recommendations to return (default: 10)
-            
+
         Returns:
             List of recommended anime
-            
+
         Raises:
             ValueError: If anime ID is invalid
             RuntimeError: If the API request fails
