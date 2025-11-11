@@ -315,10 +315,10 @@ class ErrorHandler:
 error_handler = ErrorHandler()
 
 
-def with_error_handling[T](
+def with_error_handling(
     operation: str,
     service: str | None = None,
-    fallback_value: T | None = None,
+    fallback_value: Any | None = None,
     reraise: bool = True,
 ) -> Callable[[F], F]:
     """Decorator for adding comprehensive error handling to functions.
