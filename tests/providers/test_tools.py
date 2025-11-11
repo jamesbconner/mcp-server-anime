@@ -262,7 +262,6 @@ class TestProviderToolRegistration:
 
         # Get the registered tool function from the mock call
         tool_call = mock_mcp.tool.call_args
-        tool_call[1] if tool_call[1] else tool_call[0][0]
 
         # The tool function is wrapped by the decorator, but we can test validation
         # by directly testing the validation logic that would be in the tool
