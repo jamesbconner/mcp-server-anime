@@ -51,17 +51,19 @@ dev = [
 mcp-server-anime = "mcp_server_anime.server:main"
 
 [project.urls]
-Homepage = "https://github.com/example/mcp-server-anime"
-Repository = "https://github.com/example/mcp-server-anime"
+Homepage = "https://github.com/jamesbconner/mcp-server-anime"
+Repository = "https://github.com/jamesbconner/mcp-server-anime"
 Documentation = "https://mcp-server-anime.readthedocs.io"
 "Bug Tracker" = "https://github.com/jamesbconner/mcp-server-anime/issues"
 Changelog = "https://github.com/jamesbconner/mcp-server-anime/blob/main/CHANGELOG.md"
 
 [tool.poetry]
+# Poetry-specific packaging configuration
+# Note: Metadata is defined in [project] section per PEP 621
 packages = [{include = "mcp_server_anime", from = "src"}]
 include = [
     "README.md",
-    "LICENSE",
+    "LICENSE.md",
     "CHANGELOG.md",
 ]
 exclude = [
@@ -105,8 +107,15 @@ select = [
 ignore = [
     "E501",  # line too long, handled by formatter
     "B008",  # do not perform function calls in argument defaults
+    "B904",  # raise-without-from-inside-except (intentional in error handlers)
     "C901",  # too complex
     "W191",  # indentation contains tabs
+    "ARG001",  # unused-function-argument (common in test fixtures)
+    "SIM117",  # multiple-with-statements (sometimes clearer as nested)
+    "PERF401",  # manual-list-comprehension (sometimes clearer as loop)
+    "SIM102",  # collapsible-if (sometimes clearer as nested)
+    "B007",  # unused-loop-control-variable (intentional in range loops)
+    "F403",  # import-star-usage (used in conftest.py for fixtures)
 ]
 
 [tool.ruff.lint.isort]
