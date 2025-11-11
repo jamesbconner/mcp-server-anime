@@ -203,6 +203,7 @@ markers = [
     "analytics: Tests for analytics and transaction logging",
 ]
 filterwarnings = [
+    "ignore::ResourceWarning",
     "ignore::DeprecationWarning",
     "ignore::PendingDeprecationWarning",
     "ignore::pytest.PytestUnraisableExceptionWarning",
